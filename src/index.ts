@@ -443,8 +443,8 @@ class WeChatClient {
         signal: AbortSignal.timeout(15000),
       });
 
-      const res = (await resp.json()) as { ret: number };
-      if (res.ret === 0) {
+      const res = (await resp.json()) as { ret?: number; errmsg?: string; message_id?: string | number };
+      if (res.ret === 0 || res.message_id != null) {
         console.log(`[WeChat] 已回复 (to: ${toUserId.slice(0, 8)}...): ${text.slice(0, 30)}...`);
         return true;
       } else {
