@@ -1,0 +1,6 @@
+.env
+.wechat_session.json
+qrcode.png
+__pycache__/
+*.py[cod]
+.venv/
