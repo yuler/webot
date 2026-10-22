@@ -4,11 +4,12 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import QRCode from "qrcode";
 
 const ILINK_BASE_URL = "https://ilinkai.weixin.qq.com";
-const SESSION_FILE = ".wechat_session.json";
+const SESSION_FILE = process.env.WECHAT_SESSION_FILE?.trim() || ".wechat_session.json";
 
 interface SessionData {
   bot_token?: string;
@@ -62,6 +63,94 @@ function printBanner(title: string, subtitle?: string): void {
   console.log(`  ${title}`);
   if (subtitle) console.log(`  ${subtitle}`);
   console.log("=".repeat(60) + "\n");
+}
+
+type LanStatus = "starting" | "wait" | "scaned" | "confirmed" | "expired" | "ready" | "error";
+
+const lanPage = {
+  png: null as Buffer | null,
+  status: "starting" as LanStatus,
+  message: "正在申请登录二维码…",
+};
+
+let lanServerStarted = false;
+
+function lanAddresses(port: number): string[] {
+  const urls = [`http://127.0.0.1:${port}`];
+  for (const ifaces of Object.values(os.networkInterfaces())) {
+    for (const iface of ifaces || []) {
+      const isIPv4 = iface.family === "IPv4" || iface.family === 4;
+      if (isIPv4 && !iface.internal) {
+        urls.push(`http://${iface.address}:${port}`);
+      }
+    }
+  }
+  return urls;
+}
+
+function startLanServer(): void {
+  if (lanServerStarted) return;
+  const port = Number(process.env.PORT || 3000);
+  const hostname = process.env.HOST || "0.0.0.0";
+  Bun.serve({
+    hostname,
+    port,
+    fetch(req) {
+      const pathname = new URL(req.url).pathname;
+      if (pathname === "/qrcode.png") {
+        if (!lanPage.png) return new Response("qr not ready", { status: 404 });
+        return new Response(lanPage.png, {
+          headers: {
+            "Content-Type": "image/png",
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+      if (pathname === "/status") {
+        return Response.json({ status: lanPage.status, message: lanPage.message });
+      }
+      const html = `<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeChat ClawBot</title>
+<style>
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #f5f5f5; }
+  main { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; }
+  img { width: min(80vw, 320px); height: auto; background: #fff; border-radius: 12px; }
+  p { margin: 0; line-height: 1.5; }
+  .muted { color: #aaa; font-size: 14px; }
+</style>
+<main>
+  <h1>微信扫码登录</h1>
+  <img id="qr" alt="登录二维码" src="/qrcode.png">
+  <p id="msg">${lanPage.message}</p>
+  <p class="muted">微信 → 我 → 设置 → 插件 → ClawBot，扫描此二维码并确认。</p>
+</main>
+<script>
+  async function tick() {
+    try {
+      const res = await fetch("/status", { cache: "no-store" });
+      const data = await res.json();
+      document.getElementById("msg").textContent = data.message || data.status;
+      if (data.status === "wait" || data.status === "expired" || data.status === "starting") {
+        document.getElementById("qr").src = "/qrcode.png?t=" + Date.now();
+      }
+    } catch {}
+  }
+  setInterval(tick, 2000);
+</script>
+</html>`;
+      return new Response(html, {
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    },
+  });
+  lanServerStarted = true;
+  console.log("[LAN] 手机访问登录页:");
+  for (const url of lanAddresses(port)) {
+    console.log(`  ${url}`);
+  }
 }
 
 function makeHeaders(botToken?: string): Record<string, string> {
@@ -145,6 +234,16 @@ class WeChatClient {
 
     const { qrcode: qrcodeKey, qrcode_img_content: qrContent } = qrData;
 
+    try {
+      lanPage.png = Buffer.from(await QRCode.toBuffer(qrContent, { width: 640, margin: 1 }));
+      lanPage.status = "wait";
+      lanPage.message = "等待手机微信扫码";
+    } catch (e) {
+      lanPage.status = "error";
+      lanPage.message = "二维码生成失败";
+      console.warn("二维码图片生成异常:", e);
+    }
+
     printBanner("请打开微信扫描下方二维码", "路径：微信 -> 我 -> 设置 -> 插件 -> ClawBot");
 
     // 终端紧凑字符打印二维码
@@ -192,19 +291,29 @@ class WeChatClient {
 
         const { status } = statusData;
         if (status === "wait") {
+          lanPage.status = "wait";
+          lanPage.message = "等待手机微信扫码";
           await Bun.sleep(1000);
           continue;
         } else if (status === "scaned") {
-          console.log("[WeChat] 📱 已扫码，请在手机上点击「确认登录」...");
+          if (lanPage.status !== "scaned") {
+            console.log("[WeChat] 📱 已扫码，请在手机上点击「确认登录」...");
+          }
+          lanPage.status = "scaned";
+          lanPage.message = "已扫码，请在手机上点击确认登录";
           await Bun.sleep(1000);
           continue;
         } else if (status === "confirmed") {
           this.botToken = statusData.bot_token || null;
           this.botId = statusData.ilink_bot_id || "";
           this.saveSession();
+          lanPage.status = "confirmed";
+          lanPage.message = "登录成功，可以关闭此页";
           console.log("🎉 微信扫码登录成功！");
           break;
         } else if (status === "expired") {
+          lanPage.status = "expired";
+          lanPage.message = "二维码已过期，正在刷新…";
           console.warn("[WeChat] 二维码已超时，重新获取...");
           return await this.loginWithQrCode();
         } else {
@@ -330,6 +439,10 @@ class DeepSeekBot {
   }
 
   public async chat(userId: string, userPrompt: string): Promise<string> {
+    if (!this.apiKey) {
+      return "⚠️ 服务端还没有配置 DEEPSEEK_API_KEY，暂时无法回复。";
+    }
+
     let history = this.histories.get(userId);
     if (!history) {
       history = [];
@@ -387,11 +500,34 @@ class DeepSeekBot {
   }
 }
 
+function loadHomeEnv(): void {
+  const homeEnv = path.join(os.homedir(), ".env.local");
+  if (!fs.existsSync(homeEnv)) return;
+  const text = fs.readFileSync(homeEnv, "utf-8");
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
+    if (process.env[key]) continue;
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
 async function main() {
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
+  loadHomeEnv();
+  const apiKey = process.env.DEEPSEEK_API_KEY?.trim() || "";
   if (!apiKey) {
-    printBanner("未检测到 DEEPSEEK_API_KEY 环境变量", "请在 .env 中设置 DEEPSEEK_API_KEY=sk-xxxx");
-    process.exit(1);
+    printBanner("未检测到 DEEPSEEK_API_KEY", "可写入 ~/.env.local 或项目 .env 后重启");
   }
 
   const baseUrl = process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com";
@@ -402,11 +538,16 @@ async function main() {
     `模型: ${model} | 历史重置: 发送 /reset 或 /clear`
   );
 
+  startLanServer();
+
   const wechat = new WeChatClient();
   const deepseek = new DeepSeekBot(apiKey, baseUrl, model);
 
   if (!wechat.botToken) {
     await wechat.loginWithQrCode();
+  } else {
+    lanPage.status = "ready";
+    lanPage.message = "已登录，服务监听中";
   }
 
   const seenMsgIds = new Set<string>();

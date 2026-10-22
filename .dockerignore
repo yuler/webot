@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+.scratch
+.env
+.env.*
+.wechat_session.json
+qrcode.png
+*.md
