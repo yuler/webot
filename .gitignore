@@ -1,6 +1,21 @@
+# Mac
+.DS_Store
+
+# Node.js
+node_modules
+dist
+
+# Editor
+.idea
+
+# Logs
+*.log
+*.logs
+
+# Envs
 .env
+.env.*.local
+
+# WeChat Bot Runtime Files
 .wechat_session.json
 qrcode.png
-__pycache__/
-*.py[cod]
-.venv/
