@@ -335,7 +335,7 @@ class WeChatClient {
           lanPage.status = "confirmed";
           lanPage.message = "登录成功，可以关闭此页";
           console.log("🎉 微信扫码登录成功！");
-          break;
+          return;
         } else if (status === "expired") {
           if (scannedAt && Date.now() - scannedAt < SCANNED_HOLD_MS) {
             lanPage.status = "scaned";
@@ -386,7 +386,7 @@ class WeChatClient {
         msgs?: WechatMessage[];
       };
 
-      if (data.ret !== 0) {
+      if (typeof data.ret === "number" && data.ret !== 0) {
         console.warn(`[WeChat] getupdates 接口异常 ret=${data.ret}, errmsg=${data.errmsg}`);
         if ([-14, -2, -1].includes(data.ret)) {
           this.clearSession();
