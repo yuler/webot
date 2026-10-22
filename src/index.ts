@@ -71,6 +71,7 @@ const lanPage = {
   png: null as Buffer | null,
   status: "starting" as LanStatus,
   message: "正在申请登录二维码…",
+  rev: "",
 };
 
 let lanServerStarted = false;
@@ -107,7 +108,11 @@ function startLanServer(): void {
         });
       }
       if (pathname === "/status") {
-        return Response.json({ status: lanPage.status, message: lanPage.message });
+        return Response.json({
+          status: lanPage.status,
+          message: lanPage.message,
+          rev: lanPage.rev,
+        });
       }
       const html = `<!doctype html>
 <html lang="zh-CN">
@@ -133,8 +138,10 @@ function startLanServer(): void {
       const res = await fetch("/status", { cache: "no-store" });
       const data = await res.json();
       document.getElementById("msg").textContent = data.message || data.status;
-      if (data.status === "wait" || data.status === "expired" || data.status === "starting") {
-        document.getElementById("qr").src = "/qrcode.png?t=" + Date.now();
+      const hold = data.status === "scaned" || data.status === "confirmed" || data.status === "ready";
+      if (!hold && data.rev && data.rev !== window.__qrRev) {
+        window.__qrRev = data.rev;
+        document.getElementById("qr").src = "/qrcode.png?rev=" + encodeURIComponent(data.rev);
       }
     } catch {}
   }
@@ -217,6 +224,7 @@ class WeChatClient {
   }
 
   public async loginWithQrCode(): Promise<void> {
+    qr: for (;;) {
     console.log("[WeChat] 正在向微信申请登录二维码...");
     const resp = await fetch(`${ILINK_BASE_URL}/ilink/bot/get_bot_qrcode?bot_type=3`, {
       method: "GET",
@@ -234,8 +242,10 @@ class WeChatClient {
 
     const { qrcode: qrcodeKey, qrcode_img_content: qrContent } = qrData;
 
+    const issuedAt = Date.now();
     try {
       lanPage.png = Buffer.from(await QRCode.toBuffer(qrContent, { width: 640, margin: 1 }));
+      lanPage.rev = String(issuedAt);
       lanPage.status = "wait";
       lanPage.message = "等待手机微信扫码";
     } catch (e) {
@@ -265,8 +275,20 @@ class WeChatClient {
     console.log(`🔗 原始链接: ${qrContent}\n`);
     console.log("⏳ 等待手机微信扫码并点击确认...");
 
+    // 微信二维码大约 120 秒失效。未扫码时提前换新码，避免扫到即将过期的码。
+    // 已扫码后即使接口短暂返回 expired，也继续等用户点确认。
+    const QR_REFRESH_BEFORE_MS = 80_000;
+    const SCANNED_HOLD_MS = 60_000;
+    let scannedAt = 0;
+
     // 长轮询等待扫码结果
     while (true) {
+      if (!scannedAt && Date.now() - issuedAt >= QR_REFRESH_BEFORE_MS) {
+        console.log("[WeChat] 二维码即将过期，提前刷新");
+        lanPage.message = "二维码即将过期，正在刷新…";
+        continue qr;
+      }
+
       try {
         const statusResp = await fetch(
           `${ILINK_BASE_URL}/ilink/bot/get_qrcode_status?qrcode=${encodeURIComponent(qrcodeKey)}`,
@@ -289,14 +311,17 @@ class WeChatClient {
           ilink_bot_id?: string;
         };
 
-        const { status } = statusData;
+        const status = statusData.status;
         if (status === "wait") {
-          lanPage.status = "wait";
-          lanPage.message = "等待手机微信扫码";
+          if (!scannedAt) {
+            lanPage.status = "wait";
+            lanPage.message = "等待手机微信扫码";
+          }
           await Bun.sleep(1000);
           continue;
-        } else if (status === "scaned") {
-          if (lanPage.status !== "scaned") {
+        } else if (status === "scaned" || status === "scanned") {
+          if (!scannedAt) {
+            scannedAt = Date.now();
             console.log("[WeChat] 📱 已扫码，请在手机上点击「确认登录」...");
           }
           lanPage.status = "scaned";
@@ -312,11 +337,18 @@ class WeChatClient {
           console.log("🎉 微信扫码登录成功！");
           break;
         } else if (status === "expired") {
+          if (scannedAt && Date.now() - scannedAt < SCANNED_HOLD_MS) {
+            lanPage.status = "scaned";
+            lanPage.message = "已扫码，请在手机上点击确认登录";
+            await Bun.sleep(1000);
+            continue;
+          }
           lanPage.status = "expired";
           lanPage.message = "二维码已过期，正在刷新…";
           console.warn("[WeChat] 二维码已超时，重新获取...");
-          return await this.loginWithQrCode();
+          continue qr;
         } else {
+          console.warn(`[WeChat] 未知扫码状态: ${status}`);
           await Bun.sleep(2000);
         }
       } catch (err: any) {
@@ -326,6 +358,7 @@ class WeChatClient {
         console.warn("[WeChat] 轮询网络异常，重试中:", err.message);
         await Bun.sleep(2000);
       }
+    }
     }
   }
 
