@@ -20,9 +20,11 @@ import { findOrCreateUser } from "./auth/users";
 import {
   disconnectBinding,
   ensureBindingForUser,
+  getBindingForUser,
   resetBindCode,
 } from "./auth/bindings";
-import { listMessagesForUser } from "./auth/messages";
+import { listMessagesForUser, softDeleteMessagesForUser } from "./auth/messages";
+import { resetChatMemory } from "./chat-memory";
 
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return Response.json(data, {
@@ -145,11 +147,13 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
       }
 
       if (pathname === "/status") {
+        const botReady = lanPage.status === "ready" || lanPage.status === "confirmed";
         return json({
           status: lanPage.status,
           message: lanPage.message,
           rev: lanPage.rev,
-          botReady: lanPage.status === "ready" || lanPage.status === "confirmed",
+          botReady,
+          hasQr: Boolean(lanPage.png),
         });
       }
 
@@ -244,6 +248,16 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         if (user instanceof Response) return user;
         const limit = Math.min(Number(url.searchParams.get("limit") || 100), 500);
         return json({ messages: listMessagesForUser(user.id, limit) });
+      }
+
+      // Soft-delete current user's visible messages (no hard DELETE).
+      if (pathname === "/api/messages/clear" && req.method === "POST") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const { deleted } = softDeleteMessagesForUser(user.id);
+        const binding = getBindingForUser(user.id);
+        if (binding?.wechatUserId) resetChatMemory(binding.wechatUserId);
+        return json({ ok: true, deleted });
       }
 
       // Prod UI: serve hashed assets from disk first (Nitro standard asset map

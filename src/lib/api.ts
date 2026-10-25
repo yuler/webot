@@ -113,8 +113,19 @@ export async function fetchMessages(limit = 100) {
   );
 }
 
-export async function fetchBotStatus() {
-  return parseJson<{ status: string; message: string; rev: string; botReady?: boolean }>(
-    await apiFetch("/status", { cache: "no-store" }),
+/** Soft-delete current user's visible messages (rows kept with deletedAt). */
+export async function clearMessages() {
+  return parseJson<{ ok: true; deleted: number }>(
+    await apiFetch("/api/messages/clear", { method: "POST", credentials: "include" }),
   );
+}
+
+export async function fetchBotStatus() {
+  return parseJson<{
+    status: string;
+    message: string;
+    rev: string;
+    botReady?: boolean;
+    hasQr?: boolean;
+  }>(await apiFetch("/status", { cache: "no-store" }));
 }

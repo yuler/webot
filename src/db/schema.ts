@@ -76,9 +76,12 @@ export const messages = sqliteTable(
     content: text("content").notNull(),
     wechatMessageId: text("wechat_message_id"),
     createdAt: text("created_at").notNull(),
+    /** Soft-delete tombstone; null = visible to console + WeChat context. */
+    deletedAt: text("deleted_at"),
   },
   (t) => ({
     userIdx: index("messages_user_id_idx").on(t.userId),
     createdIdx: index("messages_created_at_idx").on(t.createdAt),
+    deletedIdx: index("messages_deleted_at_idx").on(t.deletedAt),
   }),
 );

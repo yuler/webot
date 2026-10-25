@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ClawQr } from "@/components/ClawQr";
 import {
+  clearMessages,
   disconnectBinding,
   fetchMe,
   fetchMessages,
@@ -49,16 +50,16 @@ function ConsolePage() {
     mutationFn: disconnectBinding,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
   });
+  const clearM = useMutation({
+    mutationFn: clearMessages,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["messages"] }),
+  });
 
   const binding = meQ.data?.binding;
   const messages = msgQ.data?.messages ?? [];
   const [copiedCmd, setCopiedCmd] = useState(false);
-  const [copiedUrl, setCopiedUrl] = useState(false);
   const bindCommand = binding?.bindCode ? `/bind ${binding.bindCode}` : "";
-  const clawUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/clawbot`
-      : "/clawbot";
+  const isBound = binding?.status === "active" && Boolean(binding.wechatUserId);
 
   return (
     <AppShell size="lg">
@@ -82,36 +83,18 @@ function ConsolePage() {
       <section className="panel mt-6" id="scan">
         <h2 className="type-app-title">扫码上线</h2>
         <p className="type-meta mt-2">
-          微信 → 我 → 设置 → 插件 → ClawBot，扫描下方二维码并确认。也可打开或复制扫码页：
+          首次使用须先扫码：微信 → 我 → 设置 → 插件 → ClawBot，扫描下方二维码并确认。
+          ClawBot 已上线后，可跳过扫码，直接用绑定码重新关联微信。
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <code className="type-meta text-ink break-all">{clawUrl}</code>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={async () => {
-              await navigator.clipboard.writeText(
-                typeof window !== "undefined"
-                  ? `${window.location.origin}/clawbot`
-                  : clawUrl,
-              );
-              setCopiedUrl(true);
-              window.setTimeout(() => setCopiedUrl(false), 1500);
-            }}
-          >
-            {copiedUrl ? "已复制" : "复制扫码地址"}
-          </button>
-          <a href="/clawbot" className="btn-ghost">
-            打开扫码页
-          </a>
-        </div>
         <ClawQr />
       </section>
 
       <section className="panel mt-2">
         <h2 className="type-app-title">绑定微信</h2>
         <p className="type-meta mt-2">
-          扫码上线后，把下面命令复制到微信发给 ClawBot，即可把私聊关联到本账号。
+          {isBound
+            ? "已绑定。若要换微信号或重新关联，复制下方命令发到微信 ClawBot 即可重绑。"
+            : "扫码上线后，把下面命令复制到微信发给 ClawBot，即可把私聊关联到本账号（首次绑定必经扫码上线）。"}
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3 border-b border-line py-3">
           <span className="font-mono text-lg tracking-wider">
@@ -161,8 +144,32 @@ function ConsolePage() {
       </section>
 
       <section className="panel mt-2">
-        <h2 className="type-app-title">消息记录</h2>
-        <p className="type-meta mt-1">绑定后的微信对话会落在这里（新→旧）。</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 className="type-app-title">消息记录</h2>
+            <p className="type-meta mt-1">绑定后的微信对话会落在这里（新→旧）。清空为软删除，历史数据保留。</p>
+          </div>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={clearM.isPending || messages.length === 0}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  "确认清空本账号的聊天记录？记录会从控制台隐藏（软删除），不会影响其他用户。",
+                )
+              ) {
+                return;
+              }
+              clearM.mutate();
+            }}
+          >
+            {clearM.isPending ? "清空中…" : "清空聊天记录"}
+          </button>
+        </div>
+        {clearM.isSuccess ? (
+          <p className="type-meta mt-2 text-ink">已清空（软删除 {clearM.data.deleted} 条）</p>
+        ) : null}
         <ul className="mt-4 list-none p-0">
           {messages.length === 0 ? (
             <li className="type-meta">暂无消息</li>

@@ -14,7 +14,8 @@ import {
   extractBindCodeFromText,
   findActiveBindingByWechatUserId,
 } from "./auth/bindings";
-import { insertMessage } from "./auth/messages";
+import { insertMessage, softDeleteMessagesForUser } from "./auth/messages";
+import { onChatMemoryReset } from "./chat-memory";
 
 const ILINK_BASE_URL = "https://ilinkai.weixin.qq.com";
 const SESSION_FILE = process.env.WECHAT_SESSION_FILE?.trim() || ".wechat_session.json";
@@ -505,11 +506,12 @@ export async function runBotLoop(): Promise<void> {
 
   printBanner(
     "WeChat ClawBot + DeepSeek (Bun & TS)",
-    `模型: ${model} | 绑定: 向 ClawBot 发送绑定码或 /bind CODE | 控制台: /console`,
+    `模型: ${model} | 绑定: 扫码上线后发送 /bind CODE | 控制台: /console`,
   );
 
   const wechat = new WeChatClient();
   const deepseek = new DeepSeekBot(apiKey, baseUrl, model);
+  onChatMemoryReset((wechatUserId) => deepseek.resetUser(wechatUserId));
 
   if (!wechat.botToken) {
     await wechat.loginWithQrCode();
@@ -607,6 +609,8 @@ export async function runBotLoop(): Promise<void> {
       }
 
       if (text === "/reset" || text === "/clear") {
+        // Soft-delete console-visible history; keep rows. New turns start after this point.
+        softDeleteMessagesForUser(binding.userId);
         deepseek.resetUser(fromUser);
         insertMessage({
           userId: binding.userId,
