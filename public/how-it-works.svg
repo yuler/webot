@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 140" role="img" aria-labelledby="title desc">
+  <title id="title">WeBot 工作流程</title>
+  <desc id="desc">邮箱登录 → 微信发绑定码给 ClawBot → DeepSeek 回复 → 控制台看消息</desc>
+  <style>
+    .box { fill: none; stroke: currentColor; stroke-width: 1; }
+    .lab { font-family: "Noto Sans CJK SC", "Source Han Sans SC", "Noto Sans SC", sans-serif; font-size: 13px; fill: currentColor; }
+    .sub { font-family: "Noto Sans CJK SC", "Source Han Sans SC", "Noto Sans SC", sans-serif; font-size: 11px; fill: #888888; }
+    .arr { fill: none; stroke: currentColor; stroke-width: 1; }
+  </style>
+  <rect class="box" x="8" y="28" width="140" height="72"/>
+  <text class="lab" x="78" y="58" text-anchor="middle">邮箱登录</text>
+  <text class="sub" x="78" y="78" text-anchor="middle">OTP / 魔法链接</text>
+
+  <path class="arr" d="M156 64 H188"/>
+  <polygon fill="currentColor" points="188,60 198,64 188,68"/>
+
+  <rect class="box" x="206" y="28" width="140" height="72"/>
+  <text class="lab" x="276" y="58" text-anchor="middle">微信发绑定码</text>
+  <text class="sub" x="276" y="78" text-anchor="middle">发给 ClawBot</text>
+
+  <path class="arr" d="M354 64 H386"/>
+  <polygon fill="currentColor" points="386,60 396,64 386,68"/>
+
+  <rect class="box" x="404" y="28" width="140" height="72"/>
+  <text class="lab" x="474" y="58" text-anchor="middle">DeepSeek 回复</text>
+  <text class="sub" x="474" y="78" text-anchor="middle">ClawBot 长轮询</text>
+
+  <path class="arr" d="M552 64 H584"/>
+  <polygon fill="currentColor" points="584,60 594,64 584,68"/>
+
+  <rect class="box" x="602" y="28" width="110" height="72"/>
+  <text class="lab" x="657" y="58" text-anchor="middle">控制台</text>
+  <text class="sub" x="657" y="78" text-anchor="middle">看消息历史</text>
+</svg>

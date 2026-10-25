@@ -252,3 +252,75 @@
   background: transparent;
   color: var(--color-ink);
 }
+
+/* Landing homepage */
+.landing-hero {
+  padding-bottom: 8px;
+}
+
+.landing-diagram {
+  border: 1px solid var(--color-line);
+  background: var(--color-wash);
+  padding: 16px 12px;
+  overflow-x: auto;
+}
+
+.landing-diagram img {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  color: var(--color-ink);
+}
+
+.landing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.landing-list-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  border-top: 1px solid var(--color-line);
+  padding: 14px 0;
+}
+
+.landing-list-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.landing-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.landing-steps li + li {
+  margin-top: 10px;
+}
+
+.landing-faq {
+  margin: 0;
+}
+
+.landing-faq-item {
+  border-top: 1px solid var(--color-line);
+  padding: 14px 0;
+}
+
+.landing-faq-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+a.btn-solid,
+a.btn-ghost {
+  text-decoration: none;
+}
+
+a.btn-solid:hover,
+a.btn-ghost:hover {
+  text-decoration: none;
+}

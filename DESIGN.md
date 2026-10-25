@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/login`（邮箱登录）、`/console`（绑定与消息）、`/clawbot`（扫码）。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
+> WeBot 页面映射：`/`（未登录介绍首页）、`/login`（邮箱登录）、`/console`（绑定与消息）、`/clawbot`（扫码）。已登录访问 `/` 会跳到 `/console`。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 
