@@ -122,7 +122,7 @@ function latestFromSink(email: string): { code: string; magicUrl: string } {
 }
 
 describe("MVP API", () => {
-  test("OTP login happy path + binding created", async () => {
+  test("OTP backup login happy path + binding created", async () => {
     const email = "mvp@example.com";
     const req = await fetch(`${BASE}/api/auth/request-otp`, {
       method: "POST",
@@ -220,19 +220,23 @@ describe("MVP API", () => {
     expect(root.status).toBe(200); // guest landing, not redirect
     expect(root.status).not.toBe(500);
     const guestHtml = await root.text();
-    expect(guestHtml).toContain("微信里的 AI 助手控制台");
-    expect(guestHtml).toContain(">开始登录<");
-    expect(guestHtml).not.toContain(">进入控制台<");
-    expect(guestHtml).toContain('>邮箱登录</a>');
+    expect(guestHtml).toContain("微信里的 AI 助手");
+    expect(guestHtml).toContain(">登录<");
+    expect(guestHtml).toContain('>登录</a>');
     expect(guestHtml).toContain('aria-label="回到首页"');
-    expect(guestHtml).toContain('aria-label="切换主题"');
+    expect(guestHtml).not.toContain('aria-label="切换主题"');
     expect(guestHtml).not.toContain(">退出<");
+    // Scan lives on /console after login — AppBar has no /clawbot link.
+    expect(guestHtml).not.toContain('href="/clawbot"');
     // Guest CTAs go to /login; no console entry link on the landing.
     expect(guestHtml).not.toContain('href="/console"');
     expect(guestHtml).not.toContain(">黑<");
     expect(guestHtml).not.toContain(">白<");
     const login = await fetch(`${BASE}/login`);
     expect(login.status).toBe(200);
+    const loginHtml = await login.text();
+    expect(loginHtml).toContain("发送登录链接");
+    expect(loginHtml).not.toContain("密码");
     const consoleUnauth = await fetch(`${BASE}/console`, { redirect: "manual" });
     expect(consoleUnauth.status).not.toBe(500);
     expect([302, 303, 307, 308].includes(consoleUnauth.status) || consoleUnauth.status === 200).toBe(true);
@@ -259,15 +263,24 @@ describe("MVP API", () => {
     expect(root.status).toBe(200);
     expect([301, 302, 303, 307, 308].includes(root.status)).toBe(false);
     const html = await root.text();
-    expect(html).toContain("微信里的 AI 助手控制台");
-    expect(html).toContain(">进入控制台<");
+    expect(html).toContain("微信里的 AI 助手");
+    expect(html).toContain(">控制台<");
     expect(html).toContain('href="/console"');
-    expect(html).toContain(">退出<");
+    // Logout lives on /console, not AppBar / landing
+    expect(html).not.toContain(">退出<");
     expect(html).toContain('aria-label="回到首页"');
-    expect(html).not.toContain(">开始登录<");
+    expect(html).not.toContain('aria-label="切换主题"');
+    expect(html).not.toContain(">登录<");
     expect(html).not.toContain('>邮箱登录</a>');
     expect(html).not.toContain(">黑<");
     expect(html).not.toContain(">白<");
+
+    const consolePage = await fetch(`${BASE}/console`, { headers: { cookie } });
+    expect(consolePage.status).toBe(200);
+    const consoleHtml = await consolePage.text();
+    expect(consoleHtml).toContain(">退出<");
+    expect(consoleHtml).toContain("复制绑定命令");
+    expect(consoleHtml).toContain("扫码上线");
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {

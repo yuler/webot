@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/`（介绍首页，访客与已登录都看）、`/login`（邮箱登录）、`/console`（绑定与消息）、`/clawbot`（扫码）。已登录在首页顶栏显示「控制台」「退出」。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
+> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）、`/clawbot`（独立扫码页，也可从控制台进入）。顶栏只留左边 `WEBOT`、右边「登录」或「控制台」。退出放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 
@@ -20,7 +20,7 @@
 | `solid` | `#ffffff` | `#000000` | 实心按钮的底 |
 | `solid-ink` | `#000000` | `#ffffff` | 实心按钮的字 |
 
-默认是黑。`ThemeSwitch` 放在顶栏右侧：一枚直角图标按钮（黑主题显示月亮、白主题显示太阳），点击在黑↔白间切换。边框 1px `line`，悬停改为 `solid` 底 / `solid-ink` 字。选择记在这台浏览器的 `localStorage`（键名 `theme`）。
+默认是黑。主题切换组件仍保留在代码里，但默认顶栏不再挂 `ThemeSwitch`；选择仍记在这台浏览器的 `localStorage`（键名 `theme`）。
 
 ## Type
 
@@ -50,7 +50,7 @@
 
 ### `AppBar`
 
-顶栏。左是 `BOT` 角标与 `WEBOT` 字标（均链到 `/`），接着按登录态显示导航：未登录「邮箱登录」；已登录「控制台」「退出」。另有「ClawBot 扫码」。右是 `ThemeSwitch`。链接字色 `gray`，基线对齐，间距 16px，距下面内容 18px。
+顶栏极简。左是 `WEBOT` 字标（链到 `/`），右是按登录态的唯一入口：未登录「登录」→ `/login`；已登录「控制台」→ `/console`。不放扫码、主题开关、退出。链接字色 `gray`，基线对齐，距下面内容 18px。
 
 ### `Timeline`
 

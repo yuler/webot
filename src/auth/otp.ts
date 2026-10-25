@@ -93,7 +93,7 @@ export function invalidateUnusedChallenges(email: string, exceptId?: string): vo
 }
 
 /**
- * Send both a 6-digit OTP and a magic link in one email.
+ * Send a magic-link login email (6-digit OTP kept as backup in the same mail).
  */
 export async function requestOtp(rawEmail: string): Promise<RequestLoginResult> {
   const email = normalizeEmail(rawEmail);
