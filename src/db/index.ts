@@ -68,11 +68,25 @@ export function ensureSchema(): void {
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       wechat_message_id TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      deleted_at TEXT
     );
     CREATE INDEX IF NOT EXISTS messages_user_id_idx ON messages(user_id);
     CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at);
+    CREATE INDEX IF NOT EXISTS messages_deleted_at_idx ON messages(deleted_at);
   `);
+
+
+  // Migrate older messages without soft-delete tombstone
+  try {
+    const msgCols = sqlite.prepare(`PRAGMA table_info(messages)`).all() as Array<{ name: string }>;
+    if (!msgCols.some((c) => c.name === "deleted_at")) {
+      sqlite.exec(`ALTER TABLE messages ADD COLUMN deleted_at TEXT;`);
+    }
+    sqlite.exec(`CREATE INDEX IF NOT EXISTS messages_deleted_at_idx ON messages(deleted_at);`);
+  } catch {
+    // ignore
+  }
 
   // Migrate older otp_codes without kind
   try {

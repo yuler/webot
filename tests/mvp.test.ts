@@ -224,10 +224,12 @@ describe("MVP API", () => {
     expect(guestHtml).toContain(">登录<");
     expect(guestHtml).toContain('>登录</a>');
     expect(guestHtml).toContain('aria-label="回到首页"');
-    expect(guestHtml).not.toContain('aria-label="切换主题"');
+    expect(guestHtml).toContain('aria-label="切换主题"');
     expect(guestHtml).not.toContain(">退出<");
-    // Scan lives on /console after login — AppBar has no /clawbot link.
+    // Scan lives on /console — no /clawbot route or link.
     expect(guestHtml).not.toContain('href="/clawbot"');
+    expect(guestHtml).not.toContain(">WEBOT<");
+    expect(guestHtml).toContain(">Webot<");
     // Guest CTAs go to /login; no console entry link on the landing.
     expect(guestHtml).not.toContain('href="/console"');
     expect(guestHtml).not.toContain(">黑<");
@@ -269,8 +271,9 @@ describe("MVP API", () => {
     // Logout lives on /console, not AppBar / landing
     expect(html).not.toContain(">退出<");
     expect(html).toContain('aria-label="回到首页"');
-    expect(html).not.toContain('aria-label="切换主题"');
+    expect(html).toContain('aria-label="切换主题"');
     expect(html).not.toContain(">登录<");
+    expect(html).not.toContain('href="/clawbot"');
     expect(html).not.toContain('>邮箱登录</a>');
     expect(html).not.toContain(">黑<");
     expect(html).not.toContain(">白<");
@@ -281,6 +284,10 @@ describe("MVP API", () => {
     expect(consoleHtml).toContain(">退出<");
     expect(consoleHtml).toContain("复制绑定命令");
     expect(consoleHtml).toContain("扫码上线");
+    expect(consoleHtml).toContain("清空聊天记录");
+    expect(consoleHtml).not.toContain('href="/clawbot"');
+    expect(consoleHtml).toContain('aria-current="page"');
+    expect(consoleHtml).toContain('aria-label="切换主题"');
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {
@@ -375,6 +382,35 @@ console.log("OK");
     const contents = body.messages.map((m) => m.content);
     expect(contents).toContain("hello from wechat");
     expect(contents).toContain("hi back");
+  });
+
+  test("POST /api/messages/clear soft-deletes messages for current user only", async () => {
+    const { cookie } = (globalThis as any).__mvp as { cookie: string };
+    const before = await fetch(`${BASE}/api/messages`, { headers: { cookie } });
+    expect(before.status).toBe(200);
+    const beforeBody = (await before.json()) as { messages: Array<{ id: string }> };
+    expect(beforeBody.messages.length).toBeGreaterThan(0);
+
+    const clear = await fetch(`${BASE}/api/messages/clear`, {
+      method: "POST",
+      headers: { cookie },
+    });
+    expect(clear.status).toBe(200);
+    const clearBody = (await clear.json()) as { ok: boolean; deleted: number };
+    expect(clearBody.ok).toBe(true);
+    expect(clearBody.deleted).toBeGreaterThan(0);
+
+    const after = await fetch(`${BASE}/api/messages`, { headers: { cookie } });
+    const afterBody = (await after.json()) as { messages: unknown[] };
+    expect(afterBody.messages.length).toBe(0);
+
+    // Rows remain with deleted_at (soft delete, not hard delete)
+    const sqlite = new Database(TMP);
+    const row = sqlite
+      .query(`SELECT COUNT(*) AS n FROM messages WHERE deleted_at IS NOT NULL`)
+      .get() as { n: number };
+    sqlite.close();
+    expect(Number(row.n)).toBeGreaterThan(0);
   });
 });
 

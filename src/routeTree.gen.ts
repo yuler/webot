@@ -10,18 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ClawbotRouteImport } from './routes/clawbot'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as LoginRouteImport } from './routes/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClawbotRoute = ClawbotRouteImport.update({
-  id: '/clawbot',
-  path: '/clawbot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleRoute = ConsoleRouteImport.update({
@@ -37,34 +31,30 @@ const LoginRoute = LoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/clawbot': typeof ClawbotRoute
   '/console': typeof ConsoleRoute
   '/login': typeof LoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/clawbot': typeof ClawbotRoute
   '/console': typeof ConsoleRoute
   '/login': typeof LoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/clawbot': typeof ClawbotRoute
   '/console': typeof ConsoleRoute
   '/login': typeof LoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clawbot' | '/console' | '/login'
+  fullPaths: '/' | '/console' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clawbot' | '/console' | '/login'
-  id: '__root__' | '/' | '/clawbot' | '/console' | '/login'
+  to: '/' | '/console' | '/login'
+  id: '__root__' | '/' | '/console' | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ClawbotRoute: typeof ClawbotRoute
   ConsoleRoute: typeof ConsoleRoute
   LoginRoute: typeof LoginRoute
 }
@@ -76,13 +66,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clawbot': {
-      id: '/clawbot'
-      path: '/clawbot'
-      fullPath: '/clawbot'
-      preLoaderRoute: typeof ClawbotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console': {
@@ -104,7 +87,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ClawbotRoute: ClawbotRoute,
   ConsoleRoute: ConsoleRoute,
   LoginRoute: LoginRoute,
 }

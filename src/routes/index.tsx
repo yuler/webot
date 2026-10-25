@@ -15,8 +15,8 @@ const STEPS = [
   },
   {
     n: "02",
-    title: "扫码或绑定",
-    body: "在控制台扫码让 ClawBot 上线，并复制 /bind 命令发到微信。",
+    title: "扫码与绑定",
+    body: "首次在控制台扫码让 ClawBot 上线；之后把 /bind 命令发到微信。已上线时可直接用绑定码重绑。",
   },
   {
     n: "03",
@@ -32,8 +32,7 @@ function LandingPage() {
   return (
     <AppShell size="lg">
       <section className="landing-hero">
-        <p className="type-kicker text-ink">WEBOT</p>
-        <h1 className="type-title mt-3">微信里的 AI 助手</h1>
+        <h1 className="type-title">微信里的 AI 助手</h1>
         <p className="type-meta mt-3 max-w-xl">
           用邮箱魔法链接登录，在控制台扫码并复制绑定命令，即可在微信里和 DeepSeek
           对话。
