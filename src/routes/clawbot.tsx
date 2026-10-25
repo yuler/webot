@@ -1,34 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { AppBar } from "@/components/AppBar";
-import { fetchBotStatus } from "@/lib/api";
+import { ClawQr } from "@/components/ClawQr";
 
 export const Route = createFileRoute("/clawbot")({
   component: ClawBotPage,
 });
 
 function ClawBotPage() {
-  const [rev, setRev] = useState("");
-  const statusQ = useQuery({
-    queryKey: ["bot-status"],
-    queryFn: fetchBotStatus,
-    refetchInterval: 2000,
-  });
-
-  useEffect(() => {
-    const data = statusQ.data;
-    if (!data?.rev) return;
-    const hold =
-      data.status === "scaned" || data.status === "confirmed" || data.status === "ready";
-    if (hold && rev) return;
-    if (data.rev !== rev) setRev(data.rev);
-  }, [statusQ.data, rev]);
-
-  const data = statusQ.data;
-  const showQr = Boolean(rev) && !data?.botReady && data?.status !== "error";
-  const src = `/qrcode.png?rev=${encodeURIComponent(rev)}`;
-
   return (
     <main className="mx-auto max-w-md px-5 py-10">
       <AppBar />
@@ -39,9 +17,8 @@ function ClawBotPage() {
         登录，不是账号 OAuth。
       </p>
 
-      <section className="panel mt-6 text-center">
-        {showQr ? <img className="qr-code" alt="登录二维码" src={src} /> : null}
-        <p className="type-meta mt-3 text-ink">{data?.message || "加载中…"}</p>
+      <section className="panel mt-6">
+        <ClawQr />
       </section>
     </main>
   );

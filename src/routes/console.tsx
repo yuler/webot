@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { AppBar } from "@/components/AppBar";
+import { ClawQr } from "@/components/ClawQr";
 import {
   disconnectBinding,
   fetchMe,
@@ -48,6 +50,8 @@ function ConsolePage() {
 
   const binding = meQ.data?.binding;
   const messages = msgQ.data?.messages ?? [];
+  const [copied, setCopied] = useState(false);
+  const bindCommand = binding?.bindCode ? `/bind ${binding.bindCode}` : "";
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
@@ -63,8 +67,21 @@ function ConsolePage() {
           <code className="text-ink">/bind 绑定码</code>
           ），即可把微信私聊关联到本账号。
         </p>
-        <div className="mt-4 border-b border-line py-3 font-mono text-lg tracking-wider">
-          {binding?.bindCode ?? "…"}
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-b border-line py-3">
+          <span className="font-mono text-lg tracking-wider">{binding?.bindCode ?? "…"}</span>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={!bindCommand}
+            onClick={async () => {
+              if (!bindCommand) return;
+              await navigator.clipboard.writeText(bindCommand);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1500);
+            }}
+          >
+            {copied ? "已复制" : "快捷复制"}
+          </button>
         </div>
         <p className="type-meta mt-3">
           状态：{" "}
@@ -117,6 +134,14 @@ function ConsolePage() {
             ))
           )}
         </ul>
+      </section>
+
+      <section className="panel mt-2">
+        <h2 className="type-app-title">微信扫码</h2>
+        <p className="type-meta mt-2">
+          微信 → 我 → 设置 → 插件 → ClawBot，扫描并确认。
+        </p>
+        <ClawQr />
       </section>
     </main>
   );

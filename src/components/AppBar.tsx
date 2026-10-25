@@ -35,7 +35,6 @@ export function AppBar() {
         ) : (
           <Link to="/login">邮箱登录</Link>
         )}
-        <Link to="/clawbot">ClawBot 扫码</Link>
       </nav>
       <ThemeSwitch />
     </header>
