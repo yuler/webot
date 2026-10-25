@@ -1,5 +1,5 @@
 /**
- * Login email delivery (OTP digits + magic link).
+ * Login email delivery (magic link primary; OTP digits as backup).
  *
  * Sends through the configured SMTP account (same keys as moge):
  * SMTP_ADDRESS, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
@@ -84,8 +84,8 @@ async function sendViaResend(to: string, subject: string, text: string): Promise
 }
 
 function writeDevSink(to: string, code: string, magicUrl: string): void {
-  console.log(`[mail:dev] OTP for ${to}: ${code}`);
   console.log(`[mail:dev] magic link for ${to}: ${magicUrl}`);
+  console.log(`[mail:dev] OTP backup for ${to}: ${code}`);
   const sink = process.env.OTP_DEV_SINK?.trim() || "./data/otp-dev.log";
   try {
     fs.mkdirSync(path.dirname(path.resolve(sink)), { recursive: true });
@@ -103,12 +103,12 @@ export async function sendLoginEmail(
   to: string,
   payload: { code: string; magicUrl: string },
 ): Promise<void> {
-  const subject = "Your WeBot login link and code";
+  const subject = "Your WeBot login link";
   const text = [
     `Sign in to WeBot with this magic link (expires in 10 minutes):`,
     payload.magicUrl,
     ``,
-    `Or enter this one-time code: ${payload.code}`,
+    `Backup one-time code (optional): ${payload.code}`,
     ``,
     `If you did not request this, ignore this email.`,
   ].join("\n");

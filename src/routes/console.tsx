@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppBar } from "@/components/AppBar";
@@ -7,6 +7,7 @@ import {
   disconnectBinding,
   fetchMe,
   fetchMessages,
+  logout,
   resetBindCode,
 } from "@/lib/api";
 
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/console")({
 function ConsolePage() {
   const { me: initial } = Route.useRouteContext();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const meQ = useQuery({
     queryKey: ["me"],
@@ -50,37 +52,85 @@ function ConsolePage() {
 
   const binding = meQ.data?.binding;
   const messages = msgQ.data?.messages ?? [];
-  const [copied, setCopied] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const bindCommand = binding?.bindCode ? `/bind ${binding.bindCode}` : "";
+  const clawUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/clawbot`
+      : "/clawbot";
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
       <AppBar />
 
-      <h1 className="type-title">控制台</h1>
-      <p className="type-meta mt-1">已登录：{meQ.data?.user.email}</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <h1 className="type-title">控制台</h1>
+          <p className="type-meta mt-1">已登录：{meQ.data?.user.email}</p>
+        </div>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={async () => {
+            await logout();
+            navigate({ to: "/" });
+          }}
+        >
+          退出
+        </button>
+      </div>
 
-      <section className="panel mt-6">
-        <h2 className="type-app-title">微信 / ClawBot 绑定</h2>
+      <section className="panel mt-6" id="scan">
+        <h2 className="type-app-title">扫码上线</h2>
         <p className="type-meta mt-2">
-          在手机微信给已扫码登录的 ClawBot 发送绑定码（或{" "}
-          <code className="text-ink">/bind 绑定码</code>
-          ），即可把微信私聊关联到本账号。
+          微信 → 我 → 设置 → 插件 → ClawBot，扫描下方二维码并确认。也可打开或复制扫码页：
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-b border-line py-3">
-          <span className="font-mono text-lg tracking-wider">{binding?.bindCode ?? "…"}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <code className="type-meta text-ink break-all">{clawUrl}</code>
           <button
             type="button"
             className="btn-ghost"
+            onClick={async () => {
+              await navigator.clipboard.writeText(
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/clawbot`
+                  : clawUrl,
+              );
+              setCopiedUrl(true);
+              window.setTimeout(() => setCopiedUrl(false), 1500);
+            }}
+          >
+            {copiedUrl ? "已复制" : "复制扫码地址"}
+          </button>
+          <a href="/clawbot" className="btn-ghost">
+            打开扫码页
+          </a>
+        </div>
+        <ClawQr />
+      </section>
+
+      <section className="panel mt-2">
+        <h2 className="type-app-title">绑定微信</h2>
+        <p className="type-meta mt-2">
+          扫码上线后，把下面命令复制到微信发给 ClawBot，即可把私聊关联到本账号。
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-b border-line py-3">
+          <span className="font-mono text-lg tracking-wider">
+            {bindCommand || binding?.bindCode || "…"}
+          </span>
+          <button
+            type="button"
+            className="btn-solid"
             disabled={!bindCommand}
             onClick={async () => {
               if (!bindCommand) return;
               await navigator.clipboard.writeText(bindCommand);
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1500);
+              setCopiedCmd(true);
+              window.setTimeout(() => setCopiedCmd(false), 1500);
             }}
           >
-            {copied ? "已复制" : "快捷复制"}
+            {copiedCmd ? "已复制" : "复制绑定命令"}
           </button>
         </div>
         <p className="type-meta mt-3">
@@ -95,7 +145,7 @@ function ConsolePage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="btn-solid"
+            className="btn-ghost"
             onClick={() => resetM.mutate()}
             disabled={resetM.isPending}
           >
@@ -134,14 +184,6 @@ function ConsolePage() {
             ))
           )}
         </ul>
-      </section>
-
-      <section className="panel mt-2">
-        <h2 className="type-app-title">微信扫码</h2>
-        <p className="type-meta mt-2">
-          微信 → 我 → 设置 → 插件 → ClawBot，扫描并确认。
-        </p>
-        <ClawQr />
       </section>
     </main>
   );

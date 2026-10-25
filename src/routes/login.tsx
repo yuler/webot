@@ -22,7 +22,7 @@ function LoginPage() {
     mutationFn: () => requestOtp(email),
     onSuccess: () => {
       setError("");
-      setInfo("验证码和登录链接已发到这个邮箱");
+      setInfo("登录链接已发到这个邮箱，点开即可进入控制台");
     },
     onError: (e: Error) => {
       setInfo("");
@@ -43,9 +43,10 @@ function LoginPage() {
     <main className="mx-auto max-w-md px-5 py-10">
       <AppBar />
 
-      <h1 className="type-title">邮箱验证码登录</h1>
+      <h1 className="type-title">登录</h1>
       <p className="type-meta mt-2">
-        输入邮箱后会收到<strong className="text-ink">魔法链接</strong>和 6 位验证码，用其中任一方式登录。
+        输入邮箱，我们会发送<strong className="text-ink">魔法链接</strong>
+        。点开链接即可登录并进入控制台。
       </p>
 
       <section className="panel mt-6">
@@ -60,33 +61,14 @@ function LoginPage() {
             placeholder="you@example.com"
           />
         </label>
-        <label className="type-meta mt-4 block">
-          验证码
-          <input
-            className="field mt-1"
-            inputMode="numeric"
-            maxLength={6}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="6 位数字"
-          />
-        </label>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5">
           <button
             type="button"
             className="btn-solid"
             onClick={() => send.mutate()}
             disabled={send.isPending || !email}
           >
-            发送验证码
-          </button>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => verify.mutate()}
-            disabled={verify.isPending || !email || code.length < 6}
-          >
-            登录
+            发送登录链接
           </button>
         </div>
         {info ? <p className="type-meta mt-3 text-ink">{info}</p> : null}
@@ -95,6 +77,32 @@ function LoginPage() {
             {error}
           </p>
         ) : null}
+      </section>
+
+      <section className="panel mt-2">
+        <p className="type-meta">收不到链接时，可用邮件里的 6 位验证码（可选）：</p>
+        <label className="type-meta mt-3 block">
+          验证码
+          <input
+            className="field mt-1"
+            inputMode="numeric"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="6 位数字"
+            autoComplete="one-time-code"
+          />
+        </label>
+        <div className="mt-4">
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => verify.mutate()}
+            disabled={verify.isPending || !email || code.length < 6}
+          >
+            用验证码登录
+          </button>
+        </div>
       </section>
     </main>
   );

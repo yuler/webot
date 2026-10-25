@@ -182,7 +182,7 @@
 .app-bar {
   display: flex;
   flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
@@ -190,16 +190,27 @@
 
 .app-bar-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
   gap: 16px;
-  flex: 1;
   min-width: 0;
   color: var(--color-gray);
   font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: 0.18em;
+}
+
+.app-bar-cta {
+  flex-shrink: 0;
+  color: var(--color-gray);
+  text-decoration: none;
+  letter-spacing: 0.18em;
+}
+
+.app-bar-cta:hover {
+  color: var(--color-ink);
+  text-decoration: none;
 }
 
 .app-bar-nav a,
