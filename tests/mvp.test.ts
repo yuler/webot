@@ -217,13 +217,46 @@ describe("MVP API", () => {
   test("SSR / and /console work when PUBLIC_ORIGIN is unreachable", async () => {
     // Spawn sets PUBLIC_ORIGIN=http://203.0.113.1:9 and APP_ORIGIN=BASE
     const root = await fetch(`${BASE}/`, { redirect: "manual" });
-    expect(root.status).toBeLessThan(400); // 307 → /login, not 500
+    expect(root.status).toBe(200); // guest landing, not redirect
     expect(root.status).not.toBe(500);
+    const guestHtml = await root.text();
+    expect(guestHtml).toContain("微信里的 AI 助手控制台");
+    expect(guestHtml).toContain(">开始登录<");
+    expect(guestHtml).not.toContain(">进入控制台<");
+    // Guest CTAs go to /login; no console entry link on the landing.
+    expect(guestHtml).not.toContain('href="/console"');
     const login = await fetch(`${BASE}/login`);
     expect(login.status).toBe(200);
     const consoleUnauth = await fetch(`${BASE}/console`, { redirect: "manual" });
     expect(consoleUnauth.status).not.toBe(500);
     expect([302, 303, 307, 308].includes(consoleUnauth.status) || consoleUnauth.status === 200).toBe(true);
+  });
+
+  test("logged-in / still shows landing with 控制台 CTA (no redirect to /console)", async () => {
+    const email = "landing-authed@example.com";
+    await fetch(`${BASE}/api/auth/request-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const { magicUrl } = latestFromSink(email);
+    const magicRes = await fetch(magicUrl, { redirect: "manual" });
+    expect(magicRes.status).toBe(302);
+    expect(magicRes.headers.get("location")).toBe("/console");
+    const cookie = cookieFromSetCookie(magicRes.headers.get("set-cookie"));
+    expect(cookie.includes("webot_session=")).toBe(true);
+
+    const root = await fetch(`${BASE}/`, {
+      redirect: "manual",
+      headers: { cookie },
+    });
+    expect(root.status).toBe(200);
+    expect([301, 302, 303, 307, 308].includes(root.status)).toBe(false);
+    const html = await root.text();
+    expect(html).toContain("微信里的 AI 助手控制台");
+    expect(html).toContain(">进入控制台<");
+    expect(html).toContain('href="/console"');
+    expect(html).not.toContain(">开始登录<");
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {
