@@ -8,7 +8,7 @@ Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + 
 
 ## 数据模型（MVP）
 
-- `users` + `sessions` + `otp_codes` — 邮箱魔法验证码登录
+- `users` + `sessions` + `otp_codes` — 邮箱魔法链接 + 验证码登录（无账号密码）
 - `wechat_bindings` — 每人一个绑定码；向 ClawBot 发送绑定码（或 `/bind CODE`）后 `active`；可重置码 / 断开
 - `messages` — 绑定后的对话历史，控制台可看
 
@@ -31,9 +31,9 @@ bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 
 生产可先 `bun run web:build`（产出 `.output/` Nitro artifacts），再由 Bun API 同进程托管 UI + `/api`（见 Dockerfile）。
 
-### 试邮箱登录（OTP + 魔法链接）
+### 试邮箱登录（魔法链接 + 验证码，无账号密码）
 
-1. 打开 `/login`，发登录邮件  
+1. 打开 `/login`（页内有产品简介与登录表单），发登录邮件  
 2. 本地未配 SMTP/Resend 时看 API 日志 `[mail:dev] OTP for …` / `magic link for …`，或 `data/otp-dev.log`  
 3. 点魔法链接 **或** 输入 6 位验证码 → `/console`  
 4. 复制绑定码 → 微信发给已扫码的 ClawBot  

@@ -9,7 +9,7 @@
   </style>
   <rect class="box" x="8" y="28" width="140" height="72"/>
   <text class="lab" x="78" y="58" text-anchor="middle">邮箱登录</text>
-  <text class="sub" x="78" y="78" text-anchor="middle">OTP / 魔法链接</text>
+  <text class="sub" x="78" y="78" text-anchor="middle">验证码 / 魔法链接</text>
 
   <path class="arr" d="M156 64 H188"/>
   <polygon fill="currentColor" points="188,60 198,64 188,68"/>
