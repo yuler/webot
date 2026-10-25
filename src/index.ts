@@ -1,10 +1,11 @@
 /**
- * WeBot entry: email OTP console API + single-worker ClawBot.
+ * WeBot entry: email OTP console API + per-user ClawBot workers.
  * UI is TanStack Start (Vite); Bun serves /api and (in prod) the built client.
  */
 
 import { ensureSchema, dbPath } from "./db";
-import { loadHomeEnv, printBanner, runBotLoop } from "./bot";
+import { loadHomeEnv, printBanner } from "./bot";
+import { startClawRuntime } from "./claw/runtime";
 import { startApiServer } from "./api";
 import { mailTransport } from "./mail";
 
@@ -30,8 +31,14 @@ process.on("SIGTERM", () => {
 
 const skipBot = process.env.WEBOT_SKIP_BOT === "1";
 if (skipBot) {
-  printBanner("WeBot API + console", "WEBOT_SKIP_BOT=1 — ClawBot loop not started");
-  await new Promise(() => {});
+  printBanner("WeBot API + console", "WEBOT_SKIP_BOT=1 — per-user ClawBot workers not started");
 } else {
-  await runBotLoop();
+  const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+  printBanner(
+    "WeChat ClawBot + DeepSeek (per-user)",
+    `模型: ${model} | 每用户独立扫码/凭据 | 控制台: /console`,
+  );
+  startClawRuntime();
 }
+
+await new Promise(() => {});

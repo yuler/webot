@@ -12,8 +12,6 @@ export default defineConfig({
     port: Number(process.env.WEB_PORT) || 5173,
     proxy: {
       "/api": { target: apiTarget, changeOrigin: true },
-      "/qrcode.png": { target: apiTarget, changeOrigin: true },
-      "/status": { target: apiTarget, changeOrigin: true },
     },
   },
   resolve: {

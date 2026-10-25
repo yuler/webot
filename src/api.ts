@@ -4,7 +4,8 @@
 
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { lanAddresses, lanPage } from "./lan";
+import { lanAddresses } from "./lan";
+import { __testInjectQr, getQrPngForUser, getStatusForUser, publicBotView } from "./claw/runtime";
 import { requestOtp, consumeOtp, consumeMagicToken } from "./auth/otp";
 import {
   SESSION_COOKIE,
@@ -102,7 +103,7 @@ async function tryStatic(pathname: string): Promise<Response | null> {
     }
   }
 
-  if (!pathname.startsWith("/api") && !pathname.startsWith("/qrcode") && pathname !== "/status") {
+  if (!pathname.startsWith("/api")) {
     for (const root of roots) {
       const index = Bun.file(`${root}/index.html`);
       if (await index.exists()) {
@@ -139,27 +140,51 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
       const url = new URL(req.url);
       const { pathname } = url;
 
-      if (pathname === "/qrcode.png") {
-        if (!lanPage.png) return new Response("qr not ready", { status: 404 });
-        return new Response(lanPage.png, {
-          headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
-        });
-      }
-
-      if (pathname === "/status") {
-        const botReady = lanPage.status === "ready" || lanPage.status === "confirmed";
-        return json({
-          status: lanPage.status,
-          message: lanPage.message,
-          rev: lanPage.rev,
-          botReady,
-          hasQr: Boolean(lanPage.png),
-        });
+      // Legacy shared QR endpoints removed — use authenticated /api/bot/*
+      if (pathname === "/qrcode.png" || pathname === "/status") {
+        return json({ error: "gone — use /api/bot/status and /api/bot/qrcode.png" }, 410);
       }
 
       if (pathname === "/api/health") {
         return json({ ok: true });
       }
+
+      if (pathname === "/api/bot/status" && req.method === "GET") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        return json(getStatusForUser(user.id));
+      }
+
+      if (pathname === "/api/bot/qrcode.png" && req.method === "GET") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const png = getQrPngForUser(user.id);
+        if (!png) return new Response("qr not ready", { status: 404 });
+        return new Response(png, {
+          headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
+        });
+      }
+
+      if (
+        process.env.WEBOT_TEST_HOOKS === "1" &&
+        pathname === "/api/bot/__test/inject-qr" &&
+        req.method === "POST"
+      ) {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const body = await readJson(req);
+        const rev = String(body?.rev || "");
+        const b64 = String(body?.pngBase64 || "");
+        if (!rev || !b64) return json({ error: "rev and pngBase64 required" }, 400);
+        __testInjectQr(user.id, {
+          rev,
+          png: Buffer.from(b64, "base64"),
+          message: body?.message ? String(body.message) : undefined,
+        });
+        // Avoid ensureUserClawWorker race right after inject; return stored view.
+        return json({ ok: true, ...publicBotView(user.id) });
+      }
+
 
       if (pathname === "/api/auth/request-otp" && req.method === "POST") {
         const body = await readJson(req);

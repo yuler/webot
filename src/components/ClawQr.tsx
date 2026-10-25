@@ -3,11 +3,8 @@ import { useEffect, useState } from "react";
 import { fetchBotStatus } from "@/lib/api";
 
 /**
- * ClawBot login QR for the console.
- * Root cause of "never shown": when the worker already has a session,
- * `/status` returns botReady + empty rev and `/qrcode.png` 404s — so we
- * hide the <img> and show an explicit online state instead of a blank box.
- * While waiting for scan, rev + PNG are set and the image renders here.
+ * Per-user ClawBot QR on /console.
+ * Status + PNG come from authenticated /api/bot/* (isolated by SaaS userId).
  */
 export function ClawQr() {
   const [rev, setRev] = useState("");
@@ -35,7 +32,7 @@ export function ClawQr() {
   const hasQr = Boolean(data?.hasQr ?? (rev && data?.status !== "error"));
   const showQr =
     Boolean(rev) && hasQr && !botReady && data?.status !== "error" && !imgFailed;
-  const src = `/qrcode.png?rev=${encodeURIComponent(rev)}`;
+  const src = `/api/bot/qrcode.png?rev=${encodeURIComponent(rev)}`;
 
   let hint = data?.message || "加载中…";
   if (botReady) {
@@ -44,7 +41,7 @@ export function ClawQr() {
     hint = "无法获取扫码状态，请稍后刷新";
   } else if (imgFailed) {
     hint = "二维码图片加载失败，请刷新重试";
-  } else if (!showQr && data?.status === "starting") {
+  } else if (!showQr && (data?.status === "starting" || data?.status === "idle")) {
     hint = data.message || "正在申请登录二维码…";
   }
 
