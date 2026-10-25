@@ -371,3 +371,27 @@ a.btn-solid:hover,
 a.btn-ghost:hover {
   text-decoration: none;
 }
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Square spinner — DESIGN keeps corners square; uses currentColor for solid/ghost. */
+.btn-spinner {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  margin-right: 0.55em;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  flex-shrink: 0;
+  animation: btn-spin 0.65s linear infinite;
+}
+
+.btn-solid.is-loading:disabled,
+.btn-ghost.is-loading:disabled {
+  opacity: 0.85;
+  cursor: wait;
+}
