@@ -223,13 +223,13 @@ describe("MVP API", () => {
     expect(guestHtml).toContain("微信里的 AI 助手");
     expect(guestHtml).toContain(">登录<");
     expect(guestHtml).toContain('>登录</a>');
-    expect(guestHtml).toContain('aria-label="回到首页"');
+    expect(guestHtml).toContain('aria-label="weBOT 首页"');
     expect(guestHtml).toContain('aria-label="切换主题"');
     expect(guestHtml).not.toContain(">退出<");
     // Scan lives on /console — no /clawbot route or link.
     expect(guestHtml).not.toContain('href="/clawbot"');
     expect(guestHtml).not.toContain(">WEBOT<");
-    expect(guestHtml).toContain(">Webot<");
+    expect(guestHtml).toContain(">weBOT<");
     // Guest CTAs go to /login; no console entry link on the landing.
     expect(guestHtml).not.toContain('href="/console"');
     expect(guestHtml).not.toContain(">黑<");
@@ -270,7 +270,7 @@ describe("MVP API", () => {
     expect(html).toContain('href="/console"');
     // Logout lives on /console, not AppBar / landing
     expect(html).not.toContain(">退出<");
-    expect(html).toContain('aria-label="回到首页"');
+    expect(html).toContain('aria-label="weBOT 首页"');
     expect(html).toContain('aria-label="切换主题"');
     expect(html).not.toContain(">登录<");
     expect(html).not.toContain('href="/clawbot"');

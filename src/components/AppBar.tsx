@@ -1,25 +1,39 @@
 import { Link, getRouteApi, useRouterState } from "@tanstack/react-router";
+import { LogoMark } from "@/components/LogoMark";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 
 const rootRouteApi = getRouteApi("__root__");
 
-/** Left: logo + Webot; right: 登录|控制台 (active highlight) + ThemeSwitch. */
+/** Left: animated weBOT mark + label; right: 登录|控制台 + ThemeSwitch. */
 export function AppBar() {
   const { me } = rootRouteApi.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const loggedIn = Boolean(me);
   const onConsole = pathname === "/console" || pathname.startsWith("/console/");
   const onLogin = pathname === "/login" || pathname.startsWith("/login/");
+  const onHome = pathname === "/";
+
+  const brand = (
+    <>
+      <span className="app-bar-logo-frame">
+        <LogoMark className="app-bar-logo-mark" />
+      </span>
+      <span className="type-kicker text-ink app-bar-brand">weBOT</span>
+    </>
+  );
 
   return (
     <header className="app-bar">
       <nav className="app-bar-nav" aria-label="主导航">
-        <Link to="/" className="app-bar-bot" aria-label="回到首页">
-          BOT
-        </Link>
-        <Link to="/" className="type-kicker text-ink app-bar-brand">
-          Webot
-        </Link>
+        {onHome ? (
+          <span className="app-bar-home" aria-label="weBOT 首页">
+            {brand}
+          </span>
+        ) : (
+          <Link to="/" className="app-bar-home" aria-label="回到首页">
+            {brand}
+          </Link>
+        )}
       </nav>
       <div className="app-bar-end">
         {loggedIn ? (
