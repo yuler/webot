@@ -25,16 +25,32 @@ bun run console          # WEBOT_SKIP_BOT=1
 bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 ```
 
-生产可先 `bun run web:build`，再由 Bun API 托管 `.output/public` / `dist/client` 静态资源（同进程 `/api`）。
+生产可先 `bun run web:build`（产出 `.output/` Nitro artifacts），再由 Bun API 同进程托管 UI + `/api`（见 Dockerfile）。
 
 ### 试邮箱登录（OTP + 魔法链接）
 
 1. 打开 `/login`，发登录邮件  
-2. 看 API 日志 `[mail:dev] OTP for …` / `magic link for …`，或 `data/otp-dev.log`  
+2. 本地未配 SMTP/Resend 时看 API 日志 `[mail:dev] OTP for …` / `magic link for …`，或 `data/otp-dev.log`  
 3. 点魔法链接 **或** 输入 6 位验证码 → `/console`  
 4. 复制绑定码 → 微信发给已扫码的 ClawBot  
 
 生产：`bun run web:build` 后 `bun run start` 会用 Nitro `standard` 构建的 `{ fetch }` 托管 TanStack Start UI（与 `/api` 同端口）。
+
+### 发信（与 moge 同邮箱 / Dokploy）
+
+WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy 上从 moge 应用复制：
+
+| 变量 | 说明 |
+|------|------|
+| `SMTP_ADDRESS` | SMTP 主机（如 `smtp.mxhichina.com`） |
+| `SMTP_PORT` | 默认 `465` |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | 邮箱账号与授权码 |
+| `SMTP_DOMAIN` | 可选 EHLO 域名 |
+| `SMTP_SSL_ENABLED` | `true`/`false`；465 默认开 TLS |
+| `EMAIL_SENDER` | From 地址（也可用 `MAIL_FROM`） |
+| `PUBLIC_ORIGIN` | 魔法链接里的站点根 URL |
+
+未配 `SMTP_*` 时可选用 `RESEND_API_KEY` + `MAIL_FROM`；两者都没有则写 `[mail:dev]` 日志。**不要把真实密码提交进 git。**
 
 ### ClawBot
 
