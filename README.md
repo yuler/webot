@@ -2,6 +2,10 @@
 
 Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + DeepSeek 回复；控制台用 **React + TanStack Start/Router/Query**，数据用 **SQLite + Drizzle**。
 
+**生产：** [https://webot.yuler.cc/](https://webot.yuler.cc/)
+
+**界面：** 见根目录 [`DESIGN.md`](./DESIGN.md)（自 k41 黑白直角方案）。
+
 ## 数据模型（MVP）
 
 - `users` + `sessions` + `otp_codes` — 邮箱魔法验证码登录

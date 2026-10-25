@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import appCss from "../styles.css?url";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -42,11 +43,12 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" className="dark" data-theme="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen bg-ground text-ink antialiased">
         {children}
         <Scripts />
       </body>
