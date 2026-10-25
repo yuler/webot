@@ -27,11 +27,14 @@ bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 
 生产可先 `bun run web:build`，再由 Bun API 托管 `.output/public` / `dist/client` 静态资源（同进程 `/api`）。
 
-### 试邮箱 OTP
+### 试邮箱登录（OTP + 魔法链接）
 
-1. 打开 `/login`，发验证码  
-2. 看 API 日志 `[mail:dev] OTP for …` 或 `data/otp-dev.log`  
-3. 登录后进 `/console`：复制绑定码 → 微信发给已扫码的 ClawBot
+1. 打开 `/login`，发登录邮件  
+2. 看 API 日志 `[mail:dev] OTP for …` / `magic link for …`，或 `data/otp-dev.log`  
+3. 点魔法链接 **或** 输入 6 位验证码 → `/console`  
+4. 复制绑定码 → 微信发给已扫码的 ClawBot  
+
+生产：`bun run web:build` 后 `bun run start` 会用 Nitro `standard` 构建的 `{ fetch }` 托管 TanStack Start UI（与 `/api` 同端口）。
 
 ### ClawBot
 

@@ -1,10 +1,11 @@
 /**
- * Bun HTTP API + ClawBot QR assets.
- * React/TanStack Start UI talks to these endpoints (same-origin in prod; Vite proxy in dev).
+ * Bun HTTP API + ClawBot QR assets + (prod) TanStack Start UI via Nitro standard fetch.
  */
 
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { lanAddresses, lanPage } from "./lan";
-import { requestOtp, consumeOtp } from "./auth/otp";
+import { requestOtp, consumeOtp, consumeMagicToken } from "./auth/otp";
 import {
   SESSION_COOKIE,
   clearSessionCookieHeader,
@@ -49,15 +50,42 @@ function requireUser(req: Request): SessionUser | Response {
   return user;
 }
 
-/** Try serve a built TanStack Start / Vite client asset. */
+type FetchHandler = (req: Request) => Response | Promise<Response>;
+let uiFetch: FetchHandler | null | undefined;
+
+/** Load TanStack Start / Nitro `standard` build (exports `{ fetch }`, does not listen). */
+async function getUiFetch(): Promise<FetchHandler | null> {
+  if (uiFetch !== undefined) return uiFetch;
+  const candidates = [
+    path.join(process.cwd(), ".output", "server", "index.mjs"),
+    path.join(import.meta.dir, "..", ".output", "server", "index.mjs"),
+  ];
+  for (const file of candidates) {
+    try {
+      const mod = await import(pathToFileURL(file).href);
+      const fetchFn = mod.default?.fetch ?? mod.fetch;
+      if (typeof fetchFn === "function") {
+        console.log(`[UI] serving TanStack Start from ${file}`);
+        uiFetch = fetchFn as FetchHandler;
+        return uiFetch;
+      }
+    } catch {
+      // try next
+    }
+  }
+  uiFetch = null;
+  return null;
+}
+
+/** Fallback static files (assets + optional index.html shell). */
 async function tryStatic(pathname: string): Promise<Response | null> {
-  const roots = ["./dist/client", "./.output/public", "./public"];
-  // SPA fallback: unknown paths → index.html when build exists
+  const roots = ["./.output/public", "./dist/client", "./public"];
   for (const root of roots) {
-    const file = Bun.file(`${root}${pathname === "/" ? "/index.html" : pathname}`);
+    const filePath = `${root}${pathname === "/" ? "/index.html" : pathname}`;
+    const file = Bun.file(filePath);
     if (await file.exists()) {
       const type =
-        pathname.endsWith(".js")
+        pathname.endsWith(".js") || pathname.endsWith(".mjs")
           ? "application/javascript"
           : pathname.endsWith(".css")
             ? "text/css"
@@ -85,9 +113,22 @@ async function tryStatic(pathname: string): Promise<Response | null> {
   return null;
 }
 
+function issueSession(email: string): { headers: Record<string, string>; body: object } {
+  const account = findOrCreateUser(email);
+  const session = createSession(account.id);
+  const binding = ensureBindingForUser(account.id);
+  return {
+    headers: { "Set-Cookie": sessionCookieHeader(session.token, session.expiresAt) },
+    body: { ok: true, email: account.email, binding },
+  };
+}
+
 export function startApiServer(): ReturnType<typeof Bun.serve> {
   const port = Number(process.env.PORT || 3000);
   const hostname = process.env.HOST || "0.0.0.0";
+
+  // Eagerly probe UI build (non-fatal if missing in API-only / test)
+  void getUiFetch();
 
   const server = Bun.serve({
     hostname,
@@ -119,7 +160,11 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
       if (pathname === "/api/auth/request-otp" && req.method === "POST") {
         const body = await readJson(req);
         const result = await requestOtp(String(body?.email || ""));
-        if (!result.ok) return json({ error: result.error }, 400);
+        if (!result.ok) {
+          const headers: Record<string, string> = {};
+          if (result.retryAfterSec) headers["Retry-After"] = String(result.retryAfterSec);
+          return json({ error: result.error, retryAfterSec: result.retryAfterSec }, 429, headers);
+        }
         return json({ ok: true });
       }
 
@@ -127,14 +172,28 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         const body = await readJson(req);
         const consumed = consumeOtp(String(body?.email || ""), String(body?.code || ""));
         if (!consumed.ok) return json({ error: consumed.error }, 400);
-        const account = findOrCreateUser(consumed.email);
-        const session = createSession(account.id);
-        const binding = ensureBindingForUser(account.id);
-        return json(
-          { ok: true, email: account.email, binding },
-          200,
-          { "Set-Cookie": sessionCookieHeader(session.token, session.expiresAt) },
-        );
+        const issued = issueSession(consumed.email);
+        return json(issued.body, 200, issued.headers);
+      }
+
+      // Magic link: GET sets cookie and redirects to /console
+      if (pathname === "/api/auth/magic" && req.method === "GET") {
+        const token = url.searchParams.get("token") || "";
+        const consumed = consumeMagicToken(token);
+        if (!consumed.ok) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `/login?error=${encodeURIComponent(consumed.error)}` },
+          });
+        }
+        const issued = issueSession(consumed.email);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: "/console",
+            "Set-Cookie": issued.headers["Set-Cookie"]!,
+          },
+        });
       }
 
       if (pathname === "/api/auth/logout" && (req.method === "POST" || req.method === "GET")) {
@@ -181,8 +240,23 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         return json({ messages: listMessagesForUser(user.id, limit) });
       }
 
-      const staticResp = await tryStatic(pathname);
-      if (staticResp) return staticResp;
+      // Prod UI: serve hashed assets from disk first (Nitro standard asset map
+      // can 404 when the server bundle is imported under Bun), then SSR via Nitro.
+      if (!pathname.startsWith("/api")) {
+        const staticResp = await tryStatic(pathname);
+        if (staticResp) return staticResp;
+
+        const nitro = await getUiFetch();
+        if (nitro) {
+          try {
+            const res = await nitro(req);
+            // If Nitro misses a public file, tryStatic already ran; return SSR/HTML as-is.
+            return res;
+          } catch (err) {
+            console.warn("[UI] nitro fetch failed:", err);
+          }
+        }
+      }
 
       return json({ error: "not found" }, 404);
     },
@@ -195,5 +269,4 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
   return server;
 }
 
-// re-export for callers that still import startWebServer name
 export const startWebServer = startApiServer;

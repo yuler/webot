@@ -28,6 +28,8 @@ export default defineConfig({
     }),
     viteReact(),
     nitro({
+      // `standard` exports `{ fetch }` without binding a port — Bun API embeds it in prod.
+      preset: "standard",
       compressPublicAssets: true,
     }),
   ],

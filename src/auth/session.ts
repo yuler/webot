@@ -10,6 +10,10 @@ export type SessionUser = {
   email: string;
 };
 
+function cookieSecure(): boolean {
+  return process.env.COOKIE_SECURE === "1" || process.env.NODE_ENV === "production";
+}
+
 export function createSession(userId: string): { token: string; expiresAt: string } {
   const token = randomToken();
   const createdAt = nowIso();
@@ -72,7 +76,6 @@ export function parseCookies(header: string | null): Record<string, string> {
 }
 
 export function sessionCookieHeader(token: string, expiresAt: string): string {
-  const secure = process.env.COOKIE_SECURE === "1" || process.env.NODE_ENV === "production";
   const parts = [
     `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
     "Path=/",
@@ -80,10 +83,18 @@ export function sessionCookieHeader(token: string, expiresAt: string): string {
     "SameSite=Lax",
     `Expires=${new Date(expiresAt).toUTCString()}`,
   ];
-  if (secure) parts.push("Secure");
+  if (cookieSecure()) parts.push("Secure");
   return parts.join("; ");
 }
 
 export function clearSessionCookieHeader(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const parts = [
+    `${SESSION_COOKIE}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+  ];
+  if (cookieSecure()) parts.push("Secure");
+  return parts.join("; ");
 }

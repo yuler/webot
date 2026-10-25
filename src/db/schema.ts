@@ -6,18 +6,23 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull(),
 });
 
+/** Login challenges: kind = otp (6-digit) | magic (email link token). */
 export const otpCodes = sqliteTable(
   "otp_codes",
   {
     id: text("id").primaryKey(),
     email: text("email").notNull(),
+    /** sha256 hash of OTP digits or magic token */
     codeHash: text("code_hash").notNull(),
+    /** otp | magic */
+    kind: text("kind").notNull().default("otp"),
     expiresAt: text("expires_at").notNull(),
     consumedAt: text("consumed_at"),
     createdAt: text("created_at").notNull(),
   },
   (t) => ({
     emailIdx: index("otp_codes_email_idx").on(t.email),
+    hashIdx: index("otp_codes_code_hash_idx").on(t.codeHash),
   }),
 );
 
@@ -37,7 +42,6 @@ export const sessions = sqliteTable(
   }),
 );
 
-/** One row per user: bind code + ClawBot/WeChat link state. */
 export const wechatBindings = sqliteTable(
   "wechat_bindings",
   {
@@ -47,9 +51,7 @@ export const wechatBindings = sqliteTable(
       .unique()
       .references(() => users.id),
     bindCode: text("bind_code").notNull().unique(),
-    /** iLink from_user_id once the user binds by messaging the code to ClawBot */
     wechatUserId: text("wechat_user_id"),
-    /** pending | active | disconnected */
     status: text("status").notNull().default("pending"),
     boundAt: text("bound_at"),
     disconnectedAt: text("disconnected_at"),
@@ -70,7 +72,7 @@ export const messages = sqliteTable(
       .notNull()
       .references(() => users.id),
     wechatUserId: text("wechat_user_id"),
-    role: text("role").notNull(), // user | assistant | system
+    role: text("role").notNull(),
     content: text("content").notNull(),
     wechatMessageId: text("wechat_message_id"),
     createdAt: text("created_at").notNull(),

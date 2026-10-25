@@ -22,7 +22,6 @@ sqlite.exec("PRAGMA foreign_keys = ON;");
 export const db = drizzle(sqlite, { schema });
 export { schema, sqlite, dbPath };
 
-/** Apply schema at boot (MVP: no separate migrate step required). */
 export function ensureSchema(): void {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -34,11 +33,13 @@ export function ensureSchema(): void {
       id TEXT PRIMARY KEY NOT NULL,
       email TEXT NOT NULL,
       code_hash TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'otp',
       expires_at TEXT NOT NULL,
       consumed_at TEXT,
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS otp_codes_email_idx ON otp_codes(email);
+    CREATE INDEX IF NOT EXISTS otp_codes_code_hash_idx ON otp_codes(code_hash);
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY NOT NULL,
       user_id TEXT NOT NULL REFERENCES users(id),
@@ -73,7 +74,16 @@ export function ensureSchema(): void {
     CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at);
   `);
 
-  // Drop legacy multi-tenant tables if present (first-slice rename)
+  // Migrate older otp_codes without kind
+  try {
+    const cols = sqlite.prepare(`PRAGMA table_info(otp_codes)`).all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === "kind")) {
+      sqlite.exec(`ALTER TABLE otp_codes ADD COLUMN kind TEXT NOT NULL DEFAULT 'otp';`);
+    }
+  } catch {
+    // ignore
+  }
+
   try {
     sqlite.exec(`DROP TABLE IF EXISTS memberships;`);
     sqlite.exec(`DROP TABLE IF EXISTS tenants;`);

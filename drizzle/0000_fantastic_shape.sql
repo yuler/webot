@@ -15,12 +15,14 @@ CREATE TABLE `otp_codes` (
 	`id` text PRIMARY KEY NOT NULL,
 	`email` text NOT NULL,
 	`code_hash` text NOT NULL,
+	`kind` text DEFAULT 'otp' NOT NULL,
 	`expires_at` text NOT NULL,
 	`consumed_at` text,
 	`created_at` text NOT NULL
 );
 --> statement-breakpoint
 CREATE INDEX `otp_codes_email_idx` ON `otp_codes` (`email`);--> statement-breakpoint
+CREATE INDEX `otp_codes_code_hash_idx` ON `otp_codes` (`code_hash`);--> statement-breakpoint
 CREATE TABLE `sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,

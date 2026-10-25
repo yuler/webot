@@ -12,7 +12,10 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("error") || "";
+  });
 
   const send = useMutation({
     mutationFn: () => requestOtp(email),
@@ -42,7 +45,7 @@ function LoginPage() {
       </nav>
       <h1 className="text-xl font-semibold">邮箱验证码登录</h1>
       <p className="mt-2 text-sm text-zinc-400">
-        输入邮箱收取 6 位验证码。未配置 Resend 时验证码打印在服务端日志。
+        输入邮箱后会同时收到<strong>魔法链接</strong>和 6 位验证码。未配置 Resend 时两者都打印在 API 日志 / data/otp-dev.log。
       </p>
       <div className="mt-6 space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
         <label className="block text-sm text-zinc-300">

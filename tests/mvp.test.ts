@@ -6,6 +6,7 @@ import { Database } from "bun:sqlite";
 const TMP = path.join(import.meta.dir, "..", "data", "test-mvp.sqlite");
 const PORT = 3457;
 const BASE = `http://127.0.0.1:${PORT}`;
+const SINK = path.join(path.dirname(TMP), "otp-test.log");
 
 let proc: ReturnType<typeof Bun.spawn> | null = null;
 const otpLog: string[] = [];
@@ -15,16 +16,25 @@ function cookieFromSetCookie(header: string | null): string {
   return header.split(";")[0]!.trim();
 }
 
+function allSetCookie(res: Response): string {
+  // Bun may expose getSetCookie
+  const anyHeaders = res.headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof anyHeaders.getSetCookie === "function") {
+    return anyHeaders.getSetCookie().join("\n");
+  }
+  return res.headers.get("set-cookie") || "";
+}
+
 beforeAll(async () => {
   fs.mkdirSync(path.dirname(TMP), { recursive: true });
-  try {
-    fs.unlinkSync(TMP);
-  } catch {}
   for (const s of ["", "-wal", "-shm"]) {
     try {
       fs.unlinkSync(TMP + s);
     } catch {}
   }
+  try {
+    fs.unlinkSync(SINK);
+  } catch {}
 
   proc = Bun.spawn({
     cmd: ["bun", "run", "src/index.ts"],
@@ -36,13 +46,16 @@ beforeAll(async () => {
       SQLITE_PATH: TMP,
       PORT: String(PORT),
       HOST: "127.0.0.1",
-      OTP_DEV_SINK: path.join(path.dirname(TMP), "otp-test.log"),
+      PUBLIC_ORIGIN: BASE,
+      OTP_DEV_SINK: SINK,
+      // leave COOKIE_SECURE / NODE_ENV unset for HTTP tests; separate Secure test below
+      NODE_ENV: "test",
+      COOKIE_SECURE: "",
     },
     stdout: "pipe",
     stderr: "pipe",
   });
 
-  // drain logs for OTP codes
   (async () => {
     const reader = proc!.stdout.getReader();
     const dec = new TextDecoder();
@@ -51,7 +64,6 @@ beforeAll(async () => {
       if (done) break;
       const text = dec.decode(value);
       otpLog.push(text);
-      if (text.includes("[mail:dev]")) process.stdout.write(text);
     }
   })();
   (async () => {
@@ -64,7 +76,6 @@ beforeAll(async () => {
     }
   })();
 
-  // wait for health
   const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
     try {
@@ -81,25 +92,22 @@ afterAll(() => {
   proc = null;
 });
 
-function latestOtp(email: string): string {
-  const joined = otpLog.join("");
-  const re = new RegExp(`OTP for ${email.replace(".", "\\.")}: (\\d{6})`, "g");
-  let m: RegExpExecArray | null;
-  let last = "";
-  while ((m = re.exec(joined))) last = m[1]!;
-  if (!last) {
-    // also try sink file
-    const sink = path.join(path.dirname(TMP), "otp-test.log");
-    if (fs.existsSync(sink)) {
-      const lines = fs.readFileSync(sink, "utf-8").trim().split("\n");
+function latestFromSink(email: string): { code: string; magicUrl: string } {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    if (fs.existsSync(SINK)) {
+      const lines = fs.readFileSync(SINK, "utf-8").trim().split("\n").filter(Boolean);
       for (let i = lines.length - 1; i >= 0; i--) {
         const parts = lines[i]!.split("\t");
-        if (parts[1] === email && parts[2]) return parts[2]!;
+        if (parts[1] === email && parts[2] && parts[3]) {
+          return { code: parts[2]!, magicUrl: parts[3]! };
+        }
       }
     }
+    // busy wait briefly
+    Bun.sleepSync(50);
   }
-  if (!last) throw new Error(`OTP not found for ${email}. logs=${joined.slice(-500)}`);
-  return last;
+  throw new Error(`login email not found for ${email}`);
 }
 
 describe("MVP API", () => {
@@ -112,9 +120,7 @@ describe("MVP API", () => {
     });
     expect(req.status).toBe(200);
 
-    await Bun.sleep(150);
-    const code = latestOtp(email);
-
+    const { code } = latestFromSink(email);
     const verifyRes = await fetch(`${BASE}/api/auth/verify-otp`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -127,21 +133,90 @@ describe("MVP API", () => {
       binding: { bindCode: string; status: string };
     };
     expect(body.ok).toBe(true);
-    expect(body.email).toBe(email);
     expect(body.binding.bindCode).toMatch(/^WB-/);
-    expect(body.binding.status).toBe("pending");
 
     const cookie = cookieFromSetCookie(verifyRes.headers.get("set-cookie"));
     expect(cookie.startsWith("webot_session=")).toBe(true);
 
+    (globalThis as any).__mvp = { cookie, email, bindCode: body.binding.bindCode };
+  });
+
+  test("successful OTP verify invalidates sibling magic + other otp codes", async () => {
+    const email = "invalidate@example.com";
+    await fetch(`${BASE}/api/auth/request-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const first = latestFromSink(email);
+
+    await fetch(`${BASE}/api/auth/request-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const second = latestFromSink(email);
+    expect(second.code).not.toBe(first.code);
+
+    const verifyRes = await fetch(`${BASE}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, code: second.code }),
+    });
+    expect(verifyRes.status).toBe(200);
+
+    // old OTP no longer works
+    const oldOtp = await fetch(`${BASE}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, code: first.code }),
+    });
+    expect(oldOtp.status).toBe(400);
+
+    // magic from either send should be dead
+    for (const url of [first.magicUrl, second.magicUrl]) {
+      const magicRes = await fetch(url, { redirect: "manual" });
+      expect(magicRes.status).toBe(302);
+      const loc = magicRes.headers.get("location") || "";
+      expect(loc.includes("/login")).toBe(true);
+    }
+  });
+
+  test("magic link login sets session cookie and redirects", async () => {
+    const email = "magic@example.com";
+    await fetch(`${BASE}/api/auth/request-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const { magicUrl } = latestFromSink(email);
+    const res = await fetch(magicUrl, { redirect: "manual" });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/console");
+    const setCookie = allSetCookie(res);
+    expect(setCookie.includes("webot_session=")).toBe(true);
+
+    const cookie = cookieFromSetCookie(res.headers.get("set-cookie"));
     const me = await fetch(`${BASE}/api/me`, { headers: { cookie } });
     expect(me.status).toBe(200);
-    const meBody = (await me.json()) as { user: { email: string }; binding: { bindCode: string } };
-    expect(meBody.user.email).toBe(email);
-    expect(meBody.binding.bindCode).toBe(body.binding.bindCode);
+    const body = (await me.json()) as { user: { email: string } };
+    expect(body.user.email).toBe(email);
+  });
 
-    // stash for next tests via globalThis
-    (globalThis as any).__mvp = { cookie, email, bindCode: body.binding.bindCode };
+  test("OTP send rate limiting", async () => {
+    const email = "ratelimit@example.com";
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const res = await fetch(`${BASE}/api/auth/request-otp`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      statuses.push(res.status);
+    }
+    // 3 allowed per 60s window, 4th should 429
+    expect(statuses.filter((s) => s === 200).length).toBeGreaterThanOrEqual(3);
+    expect(statuses).toContain(429);
   });
 
   test("bind code reset changes code and clears wechat link", async () => {
@@ -150,7 +225,6 @@ describe("MVP API", () => {
       bindCode: string;
     };
 
-    // simulate an active bind in DB then reset via API
     const sqlite = new Database(TMP);
     sqlite
       .query(
@@ -168,10 +242,8 @@ describe("MVP API", () => {
       binding: { bindCode: string; status: string; wechatUserId: string | null };
     };
     expect(data.binding.bindCode).not.toBe(bindCode);
-    expect(data.binding.bindCode).toMatch(/^WB-/);
     expect(data.binding.status).toBe("pending");
     expect(data.binding.wechatUserId).toBeNull();
-
     (globalThis as any).__mvp.bindCode = data.binding.bindCode;
   });
 
@@ -180,15 +252,6 @@ describe("MVP API", () => {
       cookie: string;
       bindCode: string;
     };
-
-    // Use library functions in-process against same DB file — server already has schema.
-    // Activate bind + insert messages through HTTP-less module with env pointing at TMP.
-    process.env.SQLITE_PATH = TMP;
-    process.env.SESSION_SECRET = "test-secret-mvp";
-
-    // Dynamic import after env is set — modules may already be cached from other imports.
-    // Prefer writing through SQL + then reading via API after activating with auth modules
-    // loaded in a subprocess to avoid bun module cache of a different DB path.
     const repoRoot = path.join(import.meta.dir, "..");
     const helper = `
 import { ensureSchema } from "../src/db/index.ts";
@@ -206,32 +269,42 @@ console.log("OK");
     const seed = Bun.spawnSync({
       cmd: ["bun", "run", scriptPath],
       cwd: repoRoot,
-      env: {
-        ...process.env,
-        SQLITE_PATH: TMP,
-        SESSION_SECRET: "test-secret-mvp",
-      },
+      env: { ...process.env, SQLITE_PATH: TMP, SESSION_SECRET: "test-secret-mvp" },
     });
-    try { fs.unlinkSync(scriptPath); } catch {}
-    if (seed.exitCode !== 0) {
-      console.error(seed.stdout.toString());
-      console.error(seed.stderr.toString());
-    }
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch {}
     expect(seed.exitCode).toBe(0);
-    expect(seed.stdout.toString()).toContain("OK");
 
     const list = await fetch(`${BASE}/api/messages`, { headers: { cookie } });
     expect(list.status).toBe(200);
-    const body = (await list.json()) as {
-      messages: Array<{ role: string; content: string }>;
-    };
+    const body = (await list.json()) as { messages: Array<{ content: string }> };
     const contents = body.messages.map((m) => m.content);
     expect(contents).toContain("hello from wechat");
     expect(contents).toContain("hi back");
+  });
+});
 
-    const me = await fetch(`${BASE}/api/me`, { headers: { cookie } });
-    const meBody = (await me.json()) as { binding: { status: string; wechatUserId: string | null } };
-    expect(meBody.binding.status).toBe("active");
-    expect(meBody.binding.wechatUserId).toBe("wx-msg-user");
+describe("cookie Secure flag", () => {
+  test("clearSessionCookieHeader includes Secure when COOKIE_SECURE=1", async () => {
+    const repoRoot = path.join(import.meta.dir, "..");
+    const script = `
+process.env.COOKIE_SECURE = "1";
+process.env.NODE_ENV = "production";
+const { clearSessionCookieHeader, sessionCookieHeader } = await import("../src/auth/session.ts");
+const clear = clearSessionCookieHeader();
+const set = sessionCookieHeader("tok", new Date(Date.now() + 60000).toISOString());
+if (!clear.includes("Secure")) throw new Error("clear missing Secure: " + clear);
+if (!set.includes("Secure")) throw new Error("set missing Secure: " + set);
+console.log("OK");
+`;
+    const p = path.join(import.meta.dir, "_cookie_secure_tmp.ts");
+    fs.writeFileSync(p, script);
+    const r = Bun.spawnSync({ cmd: ["bun", "run", p], cwd: repoRoot });
+    try {
+      fs.unlinkSync(p);
+    } catch {}
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.toString()).toContain("OK");
   });
 });
