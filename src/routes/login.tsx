@@ -59,16 +59,25 @@ function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             placeholder="you@example.com"
+            disabled={send.isPending || verify.isPending}
           />
         </label>
         <div className="mt-5">
           <button
             type="button"
-            className="btn-solid"
+            className={`btn-solid${send.isPending ? " is-loading" : ""}`}
             onClick={() => send.mutate()}
-            disabled={send.isPending || !email}
+            disabled={send.isPending || verify.isPending || !email}
+            aria-busy={send.isPending}
           >
-            发送登录链接
+            {send.isPending ? (
+              <>
+                <span className="btn-spinner" aria-hidden="true" />
+                发送中…
+              </>
+            ) : (
+              "发送登录链接"
+            )}
           </button>
         </div>
         {info ? <p className="type-meta mt-3 text-ink">{info}</p> : null}
@@ -91,16 +100,27 @@ function LoginPage() {
             onChange={(e) => setCode(e.target.value)}
             placeholder="6 位数字"
             autoComplete="one-time-code"
+            disabled={send.isPending || verify.isPending}
           />
         </label>
         <div className="mt-4">
           <button
             type="button"
-            className="btn-ghost"
+            className={`btn-ghost${verify.isPending ? " is-loading" : ""}`}
             onClick={() => verify.mutate()}
-            disabled={verify.isPending || !email || code.length < 6}
+            disabled={
+              verify.isPending || send.isPending || !email || code.length < 6
+            }
+            aria-busy={verify.isPending}
           >
-            用验证码登录
+            {verify.isPending ? (
+              <>
+                <span className="btn-spinner" aria-hidden="true" />
+                登录中…
+              </>
+            ) : (
+              "用验证码登录"
+            )}
           </button>
         </div>
       </section>
