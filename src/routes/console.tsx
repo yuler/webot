@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AppBar } from "@/components/AppBar";
+import { AppShell } from "@/components/AppShell";
 import { ClawQr } from "@/components/ClawQr";
 import {
   disconnectBinding,
@@ -61,9 +61,7 @@ function ConsolePage() {
       : "/clawbot";
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-10">
-      <AppBar />
-
+    <AppShell size="lg">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h1 className="type-title">控制台</h1>
@@ -185,6 +183,6 @@ function ConsolePage() {
           )}
         </ul>
       </section>
-    </main>
+    </AppShell>
   );
 }

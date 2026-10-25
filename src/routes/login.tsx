@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { AppBar } from "@/components/AppBar";
+import { AppShell } from "@/components/AppShell";
 import { requestOtp, verifyOtp } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
@@ -40,9 +40,7 @@ function LoginPage() {
   });
 
   return (
-    <main className="mx-auto max-w-md px-5 py-10">
-      <AppBar />
-
+    <AppShell size="md">
       <h1 className="type-title">登录</h1>
       <p className="type-meta mt-2">
         输入邮箱，我们会发送<strong className="text-ink">魔法链接</strong>
@@ -124,6 +122,6 @@ function LoginPage() {
           </button>
         </div>
       </section>
-    </main>
+    </AppShell>
   );
 }

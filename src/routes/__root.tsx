@@ -53,7 +53,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-ground text-ink antialiased">
+      <body className="bg-ground text-ink antialiased">
         {children}
         <Scripts />
       </body>
