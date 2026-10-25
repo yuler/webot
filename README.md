@@ -1,58 +1,79 @@
-# WeChat ClawBot + DeepSeek 本地极简服务 (Bun & TypeScript)
+# WeBot — ClawBot + DeepSeek + 邮箱登录控制台
 
-免去庞大的 OpenClaw Gateway 与桌面客户端依赖，直接基于腾讯官方 **iLink 原生 HTTP 协议**，使用 **Bun + TypeScript** 在本地长轮询微信个人号私聊消息，并直连 **DeepSeek API** 给出智能回复。
+Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + DeepSeek 回复；控制台用 **React + TanStack Start/Router/Query**，数据用 **SQLite + Drizzle**。
 
-## 适用前提
+## 数据模型（MVP）
 
-- 手机微信已开通腾讯官方内测插件：**`微信 -> 我 -> 设置 -> 插件 -> ClawBot`**
+- `users` + `sessions` + `otp_codes` — 邮箱魔法验证码登录
+- `wechat_bindings` — 每人一个绑定码；向 ClawBot 发送绑定码（或 `/bind CODE`）后 `active`；可重置码 / 断开
+- `messages` — 绑定后的对话历史，控制台可看
 
-## 核心特性
-
-- ⚡ **Bun 原生驱动**：纯 TypeScript 编写，基于 Bun 高性能运行时，启动毫秒级。
-- 🛠️ **Mise 环境管理**：通过 [`.mise.toml`](file:///home/yule/Projects/webot/.mise.toml) 统一锁定 `bun` 和 `gum` 开发工具。
-- 💅 **炫彩 CLI 体验**：整合 `gum` 终端渲染工具，打印高颜值终端横幅与状态。
-- 📱 **终端扫码登录**：终端直接渲染二维码，并同步保存 `qrcode.png`，手机微信扫码即连。
-- 🔄 **自动会话恢复**：扫码凭证本地持久化（`.wechat_session.json`），重启免重复扫码；凭证过期自动再调起扫码。
-- 🧠 **DeepSeek 智能对话**：支持多轮对话上下文（默认最近 6 轮滑动窗口），发送 `/reset` 或 `/clear` 即可快速重置。
-- 🛡️ **优雅降级**：非文本消息自动友好回复；微信长轮询超时与消息排重防重试保护。
+**没有** multi-tenant / 短信 / 微信 OAuth / WebAuthn。
 
 ## 快速开始
 
-### 1. 工具环境准备
-
-本项目使用 `mise` 统一管理运行时：
-
 ```bash
-mise install
-```
-
-这将自动安装并配置项目所需的 `bun` 与 `gum`。
-
-### 2. 安装依赖并配置 API Key
-
-```bash
+mise install   # 可选
 bun install
-
 cp .env.example .env
-# 编辑 .env 填入你的 DEEPSEEK_API_KEY
+
+# 终端 1：API（可带 ClawBot；调试控制台用 skip）
+bun run console          # WEBOT_SKIP_BOT=1
+# 或 bun run start       # API + ClawBot 单 worker
+
+# 终端 2：TanStack Start UI（开发）
+bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 ```
 
-或者直接导出环境变量：
+生产可先 `bun run web:build`（产出 `.output/` Nitro artifacts），再由 Bun API 同进程托管 UI + `/api`（见 Dockerfile）。
+
+### 试邮箱登录（OTP + 魔法链接）
+
+1. 打开 `/login`，发登录邮件  
+2. 本地未配 SMTP/Resend 时看 API 日志 `[mail:dev] OTP for …` / `magic link for …`，或 `data/otp-dev.log`  
+3. 点魔法链接 **或** 输入 6 位验证码 → `/console`  
+4. 复制绑定码 → 微信发给已扫码的 ClawBot  
+
+生产：`bun run web:build` 后 `bun run start` 会用 Nitro `standard` 构建的 `{ fetch }` 托管 TanStack Start UI（与 `/api` 同端口）。
+
+### 发信（与 moge 同邮箱 / Dokploy）
+
+WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy 上从 moge 应用复制：
+
+| 变量 | 说明 |
+|------|------|
+| `SMTP_ADDRESS` | SMTP 主机（如 `smtp.mxhichina.com`） |
+| `SMTP_PORT` | 默认 `465` |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | 邮箱账号与授权码 |
+| `SMTP_DOMAIN` | 可选 EHLO 域名 |
+| `SMTP_SSL_ENABLED` | `true`/`false`；465 默认开 TLS |
+| `EMAIL_SENDER` | From 地址（也可用 `MAIL_FROM`） |
+| `PUBLIC_ORIGIN` | 邮件里魔法链接的公网站点根 URL（仅发信用） |
+| `APP_ORIGIN` | 可选；SSR/服务端请求本机 `/api` 的内网地址，默认 `http://127.0.0.1:$PORT`。Dokploy HTTPS 下务必不要用 `PUBLIC_ORIGIN` 做 SSR |
+
+未配 `SMTP_*` 时可选用 `RESEND_API_KEY` + `MAIL_FROM`；两者都没有则写 `[mail:dev]` 日志。**不要把真实密码提交进 git。**
+
+### ClawBot
+
+- 网页：`/clawbot`（或 API 同端口）  
+- 手机：微信 → 我 → 设置 → 插件 → ClawBot 扫码  
+- 绑定后发消息会写入 `messages`；未绑定会提示发绑定码
+
+## 测试
 
 ```bash
-export DEEPSEEK_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+bun test
+# 或 bun run test
 ```
 
-### 3. 一键启动
+覆盖：OTP 登录、绑定码重置、消息落库与 `/api/messages`。
 
-```bash
-bun run start
-# 或直接执行脚本
-bun run_bot.ts
-```
+## 脚本
 
-### 4. 扫码与使用
-
-1. 终端打印二维码后，使用手机微信扫描屏幕上的二维码并点击确认。
-2. 在微信中给 ClawBot 发送消息，即可体验 DeepSeek 的实时智能回复！
-3. 发送 `/reset` 或 `/clear` 可以随时清空历史上下文。
+| 命令 | 说明 |
+|------|------|
+| `bun run start` | API + ClawBot |
+| `bun run console` | 仅 API |
+| `bun run web:dev` | TanStack Start 开发服 |
+| `bun run web:build` | 构建前端 |
+| `bun test` | MVP 自动化测试 |

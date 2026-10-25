@@ -5,15 +5,40 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun --watch src/index.ts",
-    "bot": "bun run run_bot.ts"
+    "bot": "bun run run_bot.ts",
+    "console": "WEBOT_SKIP_BOT=1 bun run src/index.ts",
+    "web:dev": "vite dev",
+    "web:build": "vite build",
+    "test": "bun test tests",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-query-devtools": "^5.104.5",
+    "@tanstack/react-router": "^1.170.46",
+    "@tanstack/react-start": "^1.169.4",
+    "drizzle-orm": "^0.45.4",
+    "nodemailer": "^10.2.1",
     "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@tanstack/react-router-devtools": "^1.167.2",
     "@types/bun": "^1.4.3",
+    "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
-    "@types/qrcode-terminal": "^0.12.2"
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "drizzle-kit": "^0.31.11",
+    "nitro": "^3.0.260903-beta",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
   }
 }
