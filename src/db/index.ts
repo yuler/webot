@@ -73,6 +73,16 @@ export function ensureSchema(): void {
     );
     CREATE INDEX IF NOT EXISTS messages_user_id_idx ON messages(user_id);
     CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at);
+    CREATE TABLE IF NOT EXISTS claw_bot_sessions (
+      user_id TEXT PRIMARY KEY NOT NULL REFERENCES users(id),
+      bot_token TEXT,
+      updates_buf TEXT NOT NULL DEFAULT '',
+      bot_id TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'idle',
+      message TEXT NOT NULL DEFAULT '',
+      qr_rev TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL
+    );
   `);
 
   // Soft-delete column + index: never CREATE INDEX on deleted_at before the column exists.

@@ -127,5 +127,5 @@ export async function fetchBotStatus() {
     rev: string;
     botReady?: boolean;
     hasQr?: boolean;
-  }>(await apiFetch("/status", { cache: "no-store" }));
+  }>(await apiFetch("/api/bot/status", { credentials: "include", cache: "no-store" }));
 }

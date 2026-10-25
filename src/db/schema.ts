@@ -85,3 +85,17 @@ export const messages = sqliteTable(
     deletedIdx: index("messages_deleted_at_idx").on(t.deletedAt),
   }),
 );
+
+/** Per SaaS-user ClawBot iLink credentials (no shared session file). */
+export const clawBotSessions = sqliteTable("claw_bot_sessions", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  botToken: text("bot_token"),
+  updatesBuf: text("updates_buf").notNull().default(""),
+  botId: text("bot_id").notNull().default(""),
+  status: text("status").notNull().default("idle"),
+  message: text("message").notNull().default(""),
+  qrRev: text("qr_rev").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});

@@ -23,7 +23,7 @@ cp .env.example .env
 
 # 终端 1：API（可带 ClawBot；调试控制台用 skip）
 bun run console          # WEBOT_SKIP_BOT=1
-# 或 bun run start       # API + ClawBot 单 worker
+# 或 bun run start       # API + per-user ClawBot workers
 
 # 终端 2：TanStack Start UI（开发）
 bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
@@ -36,7 +36,7 @@ bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 1. 打开 `/login`，发送登录链接  
 2. 本地未配 SMTP/Resend 时看 API 日志 `[mail:dev] magic link for …`，或 `data/otp-dev.log`  
 3. 点魔法链接 → `/console`（可选：用邮件里的 6 位验证码）  
-4. 在控制台扫码，并复制 `/bind CODE` 发给微信 ClawBot  
+4. 登录控制台扫码上线 ClawBot，并复制绑定码发给微信  
 
 生产：`bun run web:build` 后 `bun run start` 会用 Nitro `standard` 构建的 `{ fetch }` 托管 TanStack Start UI（与 `/api` 同端口）。
 
@@ -57,10 +57,10 @@ WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy �
 
 未配 `SMTP_*` 时可选用 `RESEND_API_KEY` + `MAIL_FROM`；两者都没有则写 `[mail:dev]` 日志。**不要把真实密码提交进 git。**
 
-### ClawBot
+### ClawBot（每用户独立）
 
-- 扫码在控制台 `/console`（首次须扫码上线；已上线后可用 `/bind CODE` 重绑）  
-- 手机：微信 → 我 → 设置 → 插件 → ClawBot 扫码  
+- 扫码在控制台 `/console`：每位登录用户各自申请二维码、各自存 `bot_token`、各自长轮询  
+- 手机：微信 → 我 → 设置 → 插件 → ClawBot 扫码（一个微信号同时只能独占一个 Bot）  
 - 绑定后发消息会写入 `messages`；未绑定会提示发绑定码；控制台或微信 `/reset` 软删除历史  
 
 ## 测试

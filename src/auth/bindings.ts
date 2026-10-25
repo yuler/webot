@@ -138,6 +138,15 @@ export function activateBindingByCode(
   return { ok: true, binding: getBindingForUser(row.userId)! };
 }
 
+export function findBindingByCode(bindCodeRaw: string): BindingRow | null {
+  const bindCode = bindCodeRaw.trim().toUpperCase();
+  if (!bindCode) return null;
+  return (
+    db.select().from(schema.wechatBindings).where(eq(schema.wechatBindings.bindCode, bindCode)).get() ??
+    null
+  );
+}
+
 export function findActiveBindingByWechatUserId(wechatUserId: string): BindingRow | null {
   return (
     db
