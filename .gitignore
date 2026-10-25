@@ -19,3 +19,10 @@ dist
 # WeChat Bot Runtime Files
 .wechat_session.json
 qrcode.png
+
+# Local SQLite + OTP sink
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

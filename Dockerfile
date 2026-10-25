@@ -6,9 +6,12 @@ RUN bun install --frozen-lockfile --production
 
 COPY src ./src
 COPY run_bot.ts ./
+COPY drizzle.config.ts ./
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV SQLITE_PATH=/data/webot.sqlite
 EXPOSE 3000
+VOLUME ["/data"]
 
 CMD ["bun", "run", "src/index.ts"]

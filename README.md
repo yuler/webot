@@ -2,57 +2,81 @@
 
 免去庞大的 OpenClaw Gateway 与桌面客户端依赖，直接基于腾讯官方 **iLink 原生 HTTP 协议**，使用 **Bun + TypeScript** 在本地长轮询微信个人号私聊消息，并直连 **DeepSeek API** 给出智能回复。
 
+本仓库正在演进为多租户 SaaS 骨架：**邮箱魔法验证码登录** + **tenant 工作区**（SQLite + Drizzle）。ClawBot 仍是**进程级单 worker**（会话文件未按 tenant 拆分）。
+
 ## 适用前提
 
-- 手机微信已开通腾讯官方内测插件：**`微信 -> 我 -> 设置 -> 插件 -> ClawBot`**
+- 手机微信已开通腾讯官方内测插件：**`微信 -> 我 -> 设置 -> 插件 -> ClawBot`**（仅跑 ClawBot 时需要）
 
 ## 核心特性
 
-- ⚡ **Bun 原生驱动**：纯 TypeScript 编写，基于 Bun 高性能运行时，启动毫秒级。
-- 🛠️ **Mise 环境管理**：通过 [`.mise.toml`](file:///home/yule/Projects/webot/.mise.toml) 统一锁定 `bun` 和 `gum` 开发工具。
-- 💅 **炫彩 CLI 体验**：整合 `gum` 终端渲染工具，打印高颜值终端横幅与状态。
-- 📱 **终端扫码登录**：终端直接渲染二维码，并同步保存 `qrcode.png`，手机微信扫码即连。
-- 🔄 **自动会话恢复**：扫码凭证本地持久化（`.wechat_session.json`），重启免重复扫码；凭证过期自动再调起扫码。
-- 🧠 **DeepSeek 智能对话**：支持多轮对话上下文（默认最近 6 轮滑动窗口），发送 `/reset` 或 `/clear` 即可快速重置。
-- 🛡️ **优雅降级**：非文本消息自动友好回复；微信长轮询超时与消息排重防重试保护。
+- ⚡ **Bun 原生驱动**：纯 TypeScript，启动毫秒级。
+- 🗄️ **多租户骨架**：`users` / `tenants` / `memberships`，SQLite + Drizzle ORM。
+- ✉️ **邮箱 OTP 登录**：发送 6 位验证码 → 校验 → HttpOnly session cookie；开发环境未配邮件时验证码打印到控制台并写入 `data/otp-dev.log`。
+- 🖥️ **最简控制台**：登录后查看账号与工作区，可新建 tenant。
+- 📱 **终端 / 网页扫码登录 ClawBot**：终端二维码 + `/clawbot` 页面。
+- 🔄 **自动会话恢复**：`.wechat_session.json` 持久化；过期自动再扫码。
+- 🧠 **DeepSeek 智能对话**：多轮上下文，`/reset` / `/clear` 重置。
 
 ## 快速开始
 
 ### 1. 工具环境准备
 
-本项目使用 `mise` 统一管理运行时：
-
 ```bash
 mise install
 ```
 
-这将自动安装并配置项目所需的 `bun` 与 `gum`。
-
-### 2. 安装依赖并配置 API Key
+### 2. 安装依赖并配置
 
 ```bash
 bun install
-
 cp .env.example .env
-# 编辑 .env 填入你的 DEEPSEEK_API_KEY
+# 编辑 .env：至少可设 SESSION_SECRET；跑 ClawBot 再填 DEEPSEEK_API_KEY
 ```
 
-或者直接导出环境变量：
+### 3. 启动
 
 ```bash
-export DEEPSEEK_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
-```
-
-### 3. 一键启动
-
-```bash
+# 控制台 + ClawBot 单 worker（默认）
 bun run start
-# 或直接执行脚本
-bun run_bot.ts
+
+# 仅控制台 / 邮箱登录（不启 ClawBot 长轮询）
+bun run console
+# 等价于 WEBOT_SKIP_BOT=1 bun run start
 ```
 
-### 4. 扫码与使用
+打开：
 
-1. 终端打印二维码后，使用手机微信扫描屏幕上的二维码并点击确认。
-2. 在微信中给 ClawBot 发送消息，即可体验 DeepSeek 的实时智能回复！
-3. 发送 `/reset` 或 `/clear` 可以随时清空历史上下文。
+- 邮箱登录：`http://127.0.0.1:3000/login`
+- 控制台：`http://127.0.0.1:3000/console`
+- ClawBot 扫码：`http://127.0.0.1:3000/clawbot`
+
+### 4. 开发环境试 OTP
+
+1. 访问 `/login`，输入任意邮箱，点「发送验证码」。
+2. 看终端日志：`[mail:dev] OTP for you@example.com: 123456`，或读 `data/otp-dev.log`。
+3. 填入验证码登录 → 进入控制台，可见默认「My workspace」。
+4. 生产可设 `RESEND_API_KEY` + `MAIL_FROM` 真发信。
+
+### 5. ClawBot 扫码与使用
+
+1. 启动后终端或 `/clawbot` 出码，手机微信 ClawBot 插件扫码确认。
+2. 微信给 ClawBot 发消息即可 DeepSeek 回复；`/reset` 清上下文。
+
+## 数据与环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `SQLITE_PATH` / `DATABASE_URL` | SQLite 文件路径（默认 `./data/webot.sqlite`） |
+| `SESSION_SECRET` | OTP/session 哈希胡椒，生产务必更换 |
+| `OTP_DEV_SINK` | 开发验证码落盘路径 |
+| `RESEND_API_KEY` + `MAIL_FROM` | 可选真发信 |
+| `WEBOT_SKIP_BOT=1` | 只跑 Web，不启 ClawBot |
+| `DEEPSEEK_API_KEY` | ClawBot 回复用 |
+
+Drizzle schema：`src/db/schema.ts`。可选：`bun run db:generate` 生成 SQL 迁移；进程启动时也会 `ensureSchema()` 建表。
+
+## 说明（第一刀边界）
+
+- **不做**：短信、微信开放平台 OAuth、WebAuthn、按 tenant 多 worker。
+- ClawBot 会话仍是进程共享的 `WECHAT_SESSION_FILE`；账号体系与 bot 并存，后续再挂到具体 tenant。
