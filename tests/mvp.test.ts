@@ -46,7 +46,9 @@ beforeAll(async () => {
       SQLITE_PATH: TMP,
       PORT: String(PORT),
       HOST: "127.0.0.1",
-      PUBLIC_ORIGIN: BASE,
+      // Unreachable public origin (Dokploy HTTPS stand-in) — SSR must not use this
+      PUBLIC_ORIGIN: "http://203.0.113.1:9",
+      APP_ORIGIN: BASE,
       OTP_DEV_SINK: SINK,
       // leave COOKIE_SECURE / NODE_ENV unset for HTTP tests; separate Secure test below
       NODE_ENV: "test",
@@ -107,7 +109,9 @@ function latestFromSink(email: string): { code: string; magicUrl: string } {
       for (let i = lines.length - 1; i >= 0; i--) {
         const parts = lines[i]!.split("\t");
         if (parts[1] === email && parts[2] && parts[3]) {
-          return { code: parts[2]!, magicUrl: parts[3]! };
+          // Email magic links use PUBLIC_ORIGIN; rewrite to APP_ORIGIN/BASE for local fetch
+          const magicUrl = parts[3]!.replace(/^https?:\/\/[^/]+/, BASE);
+          return { code: parts[2]!, magicUrl };
         }
       }
     }
@@ -208,6 +212,18 @@ describe("MVP API", () => {
     expect(me.status).toBe(200);
     const body = (await me.json()) as { user: { email: string } };
     expect(body.user.email).toBe(email);
+  });
+
+  test("SSR / and /console work when PUBLIC_ORIGIN is unreachable", async () => {
+    // Spawn sets PUBLIC_ORIGIN=http://203.0.113.1:9 and APP_ORIGIN=BASE
+    const root = await fetch(`${BASE}/`, { redirect: "manual" });
+    expect(root.status).toBeLessThan(400); // 307 → /login, not 500
+    expect(root.status).not.toBe(500);
+    const login = await fetch(`${BASE}/login`);
+    expect(login.status).toBe(200);
+    const consoleUnauth = await fetch(`${BASE}/console`, { redirect: "manual" });
+    expect(consoleUnauth.status).not.toBe(500);
+    expect([302, 303, 307, 308].includes(consoleUnauth.status) || consoleUnauth.status === 200).toBe(true);
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {

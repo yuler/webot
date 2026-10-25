@@ -23,6 +23,7 @@ export type RequestLoginResult =
   | { ok: true }
   | { ok: false; error: string; retryAfterSec?: number };
 
+/** Absolute site origin for magic-link emails only (not SSR API fetches). */
 function publicOrigin(): string {
   return (
     process.env.PUBLIC_ORIGIN?.trim() ||

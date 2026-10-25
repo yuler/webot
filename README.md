@@ -48,7 +48,8 @@ WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy �
 | `SMTP_DOMAIN` | 可选 EHLO 域名 |
 | `SMTP_SSL_ENABLED` | `true`/`false`；465 默认开 TLS |
 | `EMAIL_SENDER` | From 地址（也可用 `MAIL_FROM`） |
-| `PUBLIC_ORIGIN` | 魔法链接里的站点根 URL |
+| `PUBLIC_ORIGIN` | 邮件里魔法链接的公网站点根 URL（仅发信用） |
+| `APP_ORIGIN` | 可选；SSR/服务端请求本机 `/api` 的内网地址，默认 `http://127.0.0.1:$PORT`。Dokploy HTTPS 下务必不要用 `PUBLIC_ORIGIN` 做 SSR |
 
 未配 `SMTP_*` 时可选用 `RESEND_API_KEY` + `MAIL_FROM`；两者都没有则写 `[mail:dev]` 日志。**不要把真实密码提交进 git。**
 

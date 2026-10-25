@@ -1,5 +1,6 @@
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
+import { ssrApiOrigin } from "@/lib/ssr-origin";
 
 export type Binding = {
   id: string;
@@ -29,17 +30,15 @@ export type Message = {
 };
 
 /**
- * Absolute API origin for SSR (relative fetch("/api/…") fails under Nitro/Bun).
+ * Absolute API URL for SSR (relative fetch("/api/…") fails under Nitro/Bun).
+ * Uses APP_ORIGIN / loopback only — never PUBLIC_ORIGIN (public HTTPS is often
+ * unreachable from inside the container after Dokploy TLS).
  * Browser keeps relative URLs.
  */
 const resolveApiUrl = createIsomorphicFn()
   .client((path: string) => path)
   .server((path: string) => {
-    const origin = (
-      process.env.PUBLIC_ORIGIN?.trim() ||
-      process.env.APP_ORIGIN?.trim() ||
-      `http://127.0.0.1:${process.env.PORT || 3000}`
-    ).replace(/\/+$/, "");
+    const origin = ssrApiOrigin();
     return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
   });
 
