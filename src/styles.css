@@ -240,27 +240,50 @@
 
 .theme-switch {
   display: inline-flex;
-  gap: 0;
-}
-
-.theme-switch button {
-  min-width: 40px;
-  padding: 6px 10px;
-  font-size: 13px;
-  line-height: 1.2;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-ink);
   cursor: pointer;
 }
 
-.theme-switch button[aria-pressed="true"] {
-  border: 1px solid var(--color-solid);
+.theme-switch:hover {
+  border-color: var(--color-solid);
   background: var(--color-solid);
   color: var(--color-solid-ink);
 }
 
-.theme-switch button[aria-pressed="false"] {
+.app-bar-bot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 4px 8px;
   border: 1px solid var(--color-line);
-  background: transparent;
+  border-radius: 0;
   color: var(--color-ink);
+  letter-spacing: 0.12em;
+  text-decoration: none;
+}
+
+.app-bar-bot:hover {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.app-bar-brand {
+  text-decoration: none;
+}
+
+.app-bar-brand:hover {
+  color: var(--color-ink);
+  text-decoration: none;
 }
 
 /* Landing homepage */

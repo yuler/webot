@@ -8,9 +8,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import appCss from "../styles.css?url";
+import { fetchMe } from "@/lib/api";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 export const Route = createRootRoute({
+  beforeLoad: async () => {
+    const me = await fetchMe();
+    return { me };
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

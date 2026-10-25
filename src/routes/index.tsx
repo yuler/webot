@@ -1,12 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
-import { fetchMe } from "@/lib/api";
+import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { AppBar } from "@/components/AppBar";
+
+const rootRouteApi = getRouteApi("__root__");
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const me = await fetchMe();
-    if (me) throw redirect({ to: "/console" });
-  },
   component: LandingPage,
 });
 
@@ -84,16 +81,12 @@ const FAQS = [
 ] as const;
 
 function LandingPage() {
+  const { me } = rootRouteApi.useRouteContext();
+  const loggedIn = Boolean(me);
+
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <header className="app-bar">
-        <nav className="app-bar-nav">
-          <span className="type-kicker text-ink">WEBOT</span>
-          <Link to="/login">登录</Link>
-          <Link to="/clawbot">ClawBot 扫码</Link>
-        </nav>
-        <ThemeSwitch />
-      </header>
+      <AppBar />
 
       <section className="landing-hero">
         <p className="type-kicker text-ink">CLAWBOT + DEEPSEEK</p>
@@ -104,9 +97,15 @@ function LandingPage() {
           ClawBot → 自动回复 → 在控制台回看消息。
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Link to="/login" className="btn-solid">
-            邮箱登录
-          </Link>
+          {loggedIn ? (
+            <Link to="/console" className="btn-solid">
+              控制台
+            </Link>
+          ) : (
+            <Link to="/login" className="btn-solid">
+              邮箱登录
+            </Link>
+          )}
           <Link to="/clawbot" className="btn-ghost">
             打开扫码页
           </Link>
@@ -188,9 +187,15 @@ function LandingPage() {
           <li>开始聊天；回复会出现在微信，历史可在控制台查看。</li>
         </ol>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Link to="/login" className="btn-solid">
-            开始登录
-          </Link>
+          {loggedIn ? (
+            <Link to="/console" className="btn-solid">
+              进入控制台
+            </Link>
+          ) : (
+            <Link to="/login" className="btn-solid">
+              开始登录
+            </Link>
+          )}
           <Link to="/clawbot" className="btn-ghost">
             ClawBot 扫码
           </Link>
