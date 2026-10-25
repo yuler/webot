@@ -27,3 +27,8 @@ export function setTheme(theme: Theme) {
 
 /** Inline boot script — keep in sync with STORAGE_KEY / default dark */
 export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t="dark";var r=document.documentElement;r.classList.toggle("dark",t==="dark");r.dataset.theme=t;r.style.colorScheme=t;}catch(e){document.documentElement.classList.add("dark");}})();`;
+
+export function toggleTheme() {
+  setTheme(getResolvedTheme() === "dark" ? "light" : "dark");
+}
+

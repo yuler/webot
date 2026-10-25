@@ -1,7 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { AppBar } from "@/components/AppBar";
 import { requestOtp, verifyOtp } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
@@ -41,13 +41,7 @@ function LoginPage() {
 
   return (
     <main className="mx-auto max-w-md px-5 py-10">
-      <header className="app-bar">
-        <nav className="app-bar-nav">
-          <span className="type-kicker text-ink">WEBOT</span>
-          <Link to="/clawbot">ClawBot 扫码</Link>
-        </nav>
-        <ThemeSwitch />
-      </header>
+      <AppBar />
 
       <h1 className="type-title">邮箱验证码登录</h1>
       <p className="type-meta mt-2">

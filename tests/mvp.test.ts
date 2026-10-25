@@ -223,8 +223,14 @@ describe("MVP API", () => {
     expect(guestHtml).toContain("微信里的 AI 助手控制台");
     expect(guestHtml).toContain(">开始登录<");
     expect(guestHtml).not.toContain(">进入控制台<");
+    expect(guestHtml).toContain('>邮箱登录</a>');
+    expect(guestHtml).toContain('aria-label="回到首页"');
+    expect(guestHtml).toContain('aria-label="切换主题"');
+    expect(guestHtml).not.toContain(">退出<");
     // Guest CTAs go to /login; no console entry link on the landing.
     expect(guestHtml).not.toContain('href="/console"');
+    expect(guestHtml).not.toContain(">黑<");
+    expect(guestHtml).not.toContain(">白<");
     const login = await fetch(`${BASE}/login`);
     expect(login.status).toBe(200);
     const consoleUnauth = await fetch(`${BASE}/console`, { redirect: "manual" });
@@ -256,7 +262,12 @@ describe("MVP API", () => {
     expect(html).toContain("微信里的 AI 助手控制台");
     expect(html).toContain(">进入控制台<");
     expect(html).toContain('href="/console"');
+    expect(html).toContain(">退出<");
+    expect(html).toContain('aria-label="回到首页"');
     expect(html).not.toContain(">开始登录<");
+    expect(html).not.toContain('>邮箱登录</a>');
+    expect(html).not.toContain(">黑<");
+    expect(html).not.toContain(">白<");
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {

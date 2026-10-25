@@ -1,11 +1,10 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { AppBar } from "@/components/AppBar";
 import {
   disconnectBinding,
   fetchMe,
   fetchMessages,
-  logout,
   resetBindCode,
 } from "@/lib/api";
 
@@ -20,7 +19,6 @@ export const Route = createFileRoute("/console")({
 
 function ConsolePage() {
   const { me: initial } = Route.useRouteContext();
-  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const meQ = useQuery({
@@ -53,23 +51,7 @@ function ConsolePage() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <header className="app-bar">
-        <nav className="app-bar-nav">
-          <span className="type-kicker text-ink">WEBOT</span>
-          <Link to="/console">控制台</Link>
-          <Link to="/clawbot">ClawBot 扫码</Link>
-          <button
-            type="button"
-            onClick={async () => {
-              await logout();
-              navigate({ to: "/login" });
-            }}
-          >
-            退出
-          </button>
-        </nav>
-        <ThemeSwitch />
-      </header>
+      <AppBar />
 
       <h1 className="type-title">控制台</h1>
       <p className="type-meta mt-1">已登录：{meQ.data?.user.email}</p>

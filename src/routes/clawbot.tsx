@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { AppBar } from "@/components/AppBar";
 import { fetchBotStatus } from "@/lib/api";
 
 export const Route = createFileRoute("/clawbot")({
@@ -28,14 +28,7 @@ function ClawBotPage() {
 
   return (
     <main className="mx-auto max-w-md px-5 py-10">
-      <header className="app-bar">
-        <nav className="app-bar-nav">
-          <span className="type-kicker text-ink">WEBOT</span>
-          <Link to="/login">邮箱登录</Link>
-          <Link to="/console">控制台</Link>
-        </nav>
-        <ThemeSwitch />
-      </header>
+      <AppBar />
 
       <h1 className="type-title text-center">微信 ClawBot 扫码</h1>
       <p className="type-meta mt-2 text-center">

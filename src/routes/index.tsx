@@ -1,12 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
-import { fetchMe } from "@/lib/api";
+import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { AppBar } from "@/components/AppBar";
+
+const rootRouteApi = getRouteApi("__root__");
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const me = await fetchMe();
-    return { me };
-  },
   component: LandingPage,
 });
 
@@ -84,23 +81,12 @@ const FAQS = [
 ] as const;
 
 function LandingPage() {
-  const { me } = Route.useRouteContext();
+  const { me } = rootRouteApi.useRouteContext();
   const loggedIn = Boolean(me);
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <header className="app-bar">
-        <nav className="app-bar-nav">
-          <span className="type-kicker text-ink">WEBOT</span>
-          {loggedIn ? (
-            <Link to="/console">控制台</Link>
-          ) : (
-            <Link to="/login">登录</Link>
-          )}
-          <Link to="/clawbot">ClawBot 扫码</Link>
-        </nav>
-        <ThemeSwitch />
-      </header>
+      <AppBar />
 
       <section className="landing-hero">
         <p className="type-kicker text-ink">CLAWBOT + DEEPSEEK</p>
