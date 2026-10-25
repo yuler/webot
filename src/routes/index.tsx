@@ -14,7 +14,7 @@ const STEPS = [
   {
     n: "01",
     title: "邮箱登录",
-    body: "在登录页填写邮箱，同时收到魔法链接和 6 位验证码。未配置 SMTP 时两者会打到 API 日志或 data/otp-dev.log。",
+    body: "在登录页填写邮箱，同时收到魔法链接和 6 位验证码，用其中任一方式登录。",
   },
   {
     n: "02",
@@ -59,7 +59,7 @@ const FEATURES = [
 const FAQS = [
   {
     q: "收不到验证码怎么办？",
-    a: "本地未配 SMTP/Resend 时，验证码和魔法链接会打印在 API 终端的 [mail:dev] 日志，或写入 data/otp-dev.log。生产请配置 SMTP_* 或 RESEND_API_KEY。",
+    a: "看收件箱和垃圾邮件。同一封邮件里有魔法链接和 6 位验证码，10 分钟内有效。",
   },
   {
     q: "绑定码发错或过期了？",
