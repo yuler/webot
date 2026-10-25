@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
 import {
   disconnectBinding,
   fetchMe,
@@ -52,47 +53,42 @@ function ConsolePage() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <nav className="mb-4 flex flex-wrap gap-3 text-sm text-sky-300">
-        <Link to="/console">控制台</Link>
-        <Link to="/clawbot">ClawBot 扫码</Link>
-        <button
-          type="button"
-          className="text-sky-300"
-          onClick={async () => {
-            await logout();
-            navigate({ to: "/login" });
-          }}
-        >
-          退出
-        </button>
-      </nav>
-      <h1 className="text-xl font-semibold">控制台</h1>
-      <p className="mt-1 text-sm text-zinc-400">已登录：{meQ.data?.user.email}</p>
+      <header className="app-bar">
+        <nav className="app-bar-nav">
+          <span className="type-kicker text-ink">WEBOT</span>
+          <Link to="/console">控制台</Link>
+          <Link to="/clawbot">ClawBot 扫码</Link>
+          <button
+            type="button"
+            onClick={async () => {
+              await logout();
+              navigate({ to: "/login" });
+            }}
+          >
+            退出
+          </button>
+        </nav>
+        <ThemeSwitch />
+      </header>
 
-      <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-        <h2 className="text-base font-medium">微信 / ClawBot 绑定</h2>
-        <p className="mt-2 text-sm text-zinc-400">
-          在手机微信给已扫码登录的 ClawBot 发送绑定码（或 <code>/bind 绑定码</code>
+      <h1 className="type-title">控制台</h1>
+      <p className="type-meta mt-1">已登录：{meQ.data?.user.email}</p>
+
+      <section className="panel mt-6">
+        <h2 className="type-app-title">微信 / ClawBot 绑定</h2>
+        <p className="type-meta mt-2">
+          在手机微信给已扫码登录的 ClawBot 发送绑定码（或{" "}
+          <code className="text-ink">/bind 绑定码</code>
           ），即可把微信私聊关联到本账号。
         </p>
-        <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 font-mono text-lg tracking-wider">
+        <div className="mt-4 border-b border-line py-3 font-mono text-lg tracking-wider">
           {binding?.bindCode ?? "…"}
         </div>
-        <p className="mt-3 text-sm">
+        <p className="type-meta mt-3">
           状态：{" "}
-          <span
-            className={
-              binding?.status === "active"
-                ? "text-emerald-300"
-                : binding?.status === "disconnected"
-                  ? "text-amber-300"
-                  : "text-zinc-300"
-            }
-          >
-            {binding?.status ?? "unknown"}
-          </span>
+          <span className="text-ink">{binding?.status ?? "unknown"}</span>
           {binding?.wechatUserId ? (
-            <span className="ml-2 text-zinc-500">
+            <span className="ml-2">
               wechat={binding.wechatUserId.slice(0, 10)}…
             </span>
           ) : null}
@@ -100,7 +96,7 @@ function ConsolePage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold"
+            className="btn-solid"
             onClick={() => resetM.mutate()}
             disabled={resetM.isPending}
           >
@@ -108,7 +104,7 @@ function ConsolePage() {
           </button>
           <button
             type="button"
-            className="rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold"
+            className="btn-ghost"
             onClick={() => disconnectM.mutate()}
             disabled={disconnectM.isPending || binding?.status !== "active"}
           >
@@ -117,21 +113,22 @@ function ConsolePage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-        <h2 className="text-base font-medium">消息记录</h2>
-        <p className="mt-1 text-sm text-zinc-400">绑定后的微信对话会落在这里（新→旧）。</p>
-        <ul className="mt-4 space-y-2">
+      <section className="panel mt-2">
+        <h2 className="type-app-title">消息记录</h2>
+        <p className="type-meta mt-1">绑定后的微信对话会落在这里（新→旧）。</p>
+        <ul className="mt-4 list-none p-0">
           {messages.length === 0 ? (
-            <li className="text-sm text-zinc-500">暂无消息</li>
+            <li className="type-meta">暂无消息</li>
           ) : (
             messages.map((m) => (
-              <li
-                key={m.id}
-                className="rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-sm"
-              >
-                <div className="flex justify-between gap-2 text-xs text-zinc-500">
+              <li key={m.id} className="timeline-row text-sm">
+                <div className="flex justify-between gap-2 type-meta text-xs">
                   <span>{m.role}</span>
-                  <span>{new Date(m.createdAt).toLocaleString("zh-CN", { hour12: false })}</span>
+                  <span>
+                    {new Date(m.createdAt).toLocaleString("zh-CN", {
+                      hour12: false,
+                    })}
+                  </span>
                 </div>
                 <p className="mt-1 whitespace-pre-wrap break-words">{m.content}</p>
               </li>
