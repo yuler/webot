@@ -452,10 +452,9 @@ class DeepSeekBot {
   }
 }
 
-export function loadHomeEnv(): void {
-  const homeEnv = path.join(os.homedir(), ".env.local");
-  if (!fs.existsSync(homeEnv)) return;
-  const text = fs.readFileSync(homeEnv, "utf-8");
+function applyEnvFile(filePath: string): void {
+  if (!fs.existsSync(filePath)) return;
+  const text = fs.readFileSync(filePath, "utf-8");
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
@@ -463,7 +462,8 @@ export function loadHomeEnv(): void {
     if (eq <= 0) continue;
     const key = trimmed.slice(0, eq).trim();
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
-    if (process.env[key]) continue;
+    // Keep explicit empty values (tests clear SMTP_* so mail stays on the dev sink).
+    if (process.env[key] !== undefined) continue;
     let value = trimmed.slice(eq + 1).trim();
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
@@ -473,6 +473,12 @@ export function loadHomeEnv(): void {
     }
     process.env[key] = value;
   }
+}
+
+/** Fill unset vars from the project `.env`, then `~/.env.local`. */
+export function loadHomeEnv(): void {
+  applyEnvFile(path.resolve(".env"));
+  applyEnvFile(path.join(os.homedir(), ".env.local"));
 }
 
 /** Run the existing single-worker ClawBot loop (blocks forever). */

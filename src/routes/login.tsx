@@ -22,7 +22,7 @@ function LoginPage() {
     mutationFn: () => requestOtp(email),
     onSuccess: () => {
       setError("");
-      setInfo("验证码已发送（开发环境请看 API 终端日志 / data/otp-dev.log）");
+      setInfo("验证码和登录链接已发到这个邮箱");
     },
     onError: (e: Error) => {
       setInfo("");
@@ -51,8 +51,8 @@ function LoginPage() {
 
       <h1 className="type-title">邮箱验证码登录</h1>
       <p className="type-meta mt-2">
-        输入邮箱后会同时收到<strong className="text-ink">魔法链接</strong>和 6
-        位验证码。未配置 SMTP/Resend 时两者都打印在 API 日志 / data/otp-dev.log。
+        输入邮箱后会用 SMTP 账号同时发出<strong className="text-ink">魔法链接</strong>和 6
+        位验证码。未配置 SMTP 时写在 API 日志 / data/otp-dev.log。
       </p>
 
       <section className="panel mt-6">

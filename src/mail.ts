@@ -1,11 +1,10 @@
 /**
  * Login email delivery (OTP digits + magic link).
  *
- * Priority:
- * 1. SMTP when SMTP_ADDRESS + SMTP_USERNAME + SMTP_PASSWORD are set
- *    (same keys as moge / Dokploy — EMAIL_SENDER, SMTP_DOMAIN, SMTP_SSL_ENABLED)
- * 2. Resend when RESEND_API_KEY + MAIL_FROM are set
- * 3. Dev: console + OTP_DEV_SINK file
+ * Sends through the configured SMTP account (same keys as moge):
+ * SMTP_ADDRESS, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
+ * SMTP_SSL_ENABLED, SMTP_DOMAIN, EMAIL_SENDER.
+ * Resend is only a fallback when SMTP is unset. Neither → dev sink.
  */
 
 import fs from "node:fs";
@@ -21,12 +20,19 @@ function smtpConfigured(): boolean {
 }
 
 function mailFrom(): string {
+  // Prefer the SMTP login itself so Exmail accepts the From address.
   return (
+    process.env.SMTP_USERNAME?.trim() ||
     process.env.EMAIL_SENDER?.trim() ||
     process.env.MAIL_FROM?.trim() ||
-    process.env.SMTP_USERNAME?.trim() ||
     "noreply@localhost"
   );
+}
+
+export function mailTransport(): "smtp" | "resend" | "dev" {
+  if (smtpConfigured()) return "smtp";
+  if (process.env.RESEND_API_KEY?.trim() && process.env.MAIL_FROM?.trim()) return "resend";
+  return "dev";
 }
 
 async function sendViaSmtp(to: string, subject: string, text: string): Promise<void> {
