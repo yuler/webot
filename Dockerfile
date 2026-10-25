@@ -14,7 +14,6 @@ COPY run_bot.ts ./
 COPY drizzle.config.ts ./
 COPY drizzle ./drizzle
 COPY --from=build /app/.output ./.output
-COPY --from=build /app/dist ./dist
 
 ENV HOST=0.0.0.0
 ENV PORT=3000

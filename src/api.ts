@@ -161,9 +161,15 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         const body = await readJson(req);
         const result = await requestOtp(String(body?.email || ""));
         if (!result.ok) {
-          const headers: Record<string, string> = {};
-          if (result.retryAfterSec) headers["Retry-After"] = String(result.retryAfterSec);
-          return json({ error: result.error, retryAfterSec: result.retryAfterSec }, 429, headers);
+          // Validation (e.g. invalid email) → 400; rate limit includes retryAfterSec → 429
+          if (result.retryAfterSec != null) {
+            return json(
+              { error: result.error, retryAfterSec: result.retryAfterSec },
+              429,
+              { "Retry-After": String(result.retryAfterSec) },
+            );
+          }
+          return json({ error: result.error }, 400);
         }
         return json({ ok: true });
       }

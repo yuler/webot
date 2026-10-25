@@ -203,6 +203,19 @@ describe("MVP API", () => {
     expect(body.user.email).toBe(email);
   });
 
+  test("invalid email on request-otp returns 400 (not 429)", async () => {
+    for (const email of ["", "not-an-email", "missing-at", "@nouser.com"]) {
+      const res = await fetch(`${BASE}/api/auth/request-otp`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { error?: string };
+      expect(body.error).toMatch(/invalid email/i);
+    }
+  });
+
   test("OTP send rate limiting", async () => {
     const email = "ratelimit@example.com";
     const statuses: number[] = [];
