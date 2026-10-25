@@ -223,6 +223,16 @@
   padding-bottom: 26px;
 }
 
+.qr-code {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  margin-inline: auto;
+  padding: 16px;
+  background: #ffffff;
+  image-rendering: pixelated;
+}
+
 .timeline-row {
   border-top: 1px solid var(--color-line);
   padding: 10px 0;

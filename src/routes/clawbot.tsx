@@ -18,13 +18,16 @@ function ClawBotPage() {
 
   useEffect(() => {
     const data = statusQ.data;
-    if (!data) return;
+    if (!data?.rev) return;
     const hold =
       data.status === "scaned" || data.status === "confirmed" || data.status === "ready";
-    if (!hold && data.rev && data.rev !== rev) setRev(data.rev);
+    if (hold && rev) return;
+    if (data.rev !== rev) setRev(data.rev);
   }, [statusQ.data, rev]);
 
-  const src = rev ? `/qrcode.png?rev=${encodeURIComponent(rev)}` : "/qrcode.png";
+  const data = statusQ.data;
+  const showQr = Boolean(rev) && !data?.botReady && data?.status !== "error";
+  const src = `/qrcode.png?rev=${encodeURIComponent(rev)}`;
 
   return (
     <main className="mx-auto max-w-md px-5 py-10">
@@ -44,14 +47,8 @@ function ClawBotPage() {
       </p>
 
       <section className="panel mt-6 text-center">
-        <img
-          className="mx-auto w-full max-w-[280px] bg-white"
-          alt="登录二维码"
-          src={src}
-        />
-        <p className="type-meta mt-3 text-ink">
-          {statusQ.data?.message || "加载中…"}
-        </p>
+        {showQr ? <img className="qr-code" alt="登录二维码" src={src} /> : null}
+        <p className="type-meta mt-3 text-ink">{data?.message || "加载中…"}</p>
       </section>
     </main>
   );

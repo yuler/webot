@@ -51,8 +51,7 @@ function LoginPage() {
 
       <h1 className="type-title">邮箱验证码登录</h1>
       <p className="type-meta mt-2">
-        输入邮箱后会用 SMTP 账号同时发出<strong className="text-ink">魔法链接</strong>和 6
-        位验证码。未配置 SMTP 时写在 API 日志 / data/otp-dev.log。
+        输入邮箱后会收到<strong className="text-ink">魔法链接</strong>和 6 位验证码，用其中任一方式登录。
       </p>
 
       <section className="panel mt-6">

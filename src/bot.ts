@@ -164,7 +164,14 @@ class WeChatClient {
 
       const issuedAt = Date.now();
       try {
-        lanPage.png = Buffer.from(await QRCode.toBuffer(qrContent, { width: 640, margin: 1 }));
+        lanPage.png = Buffer.from(
+          await QRCode.toBuffer(qrContent, {
+            errorCorrectionLevel: "M",
+            margin: 2,
+            scale: 8,
+            color: { dark: "#000000", light: "#ffffff" },
+          }),
+        );
         lanPage.rev = String(issuedAt);
         lanPage.status = "wait";
         lanPage.message = "等待手机微信扫码";
@@ -184,7 +191,12 @@ class WeChatClient {
       }
 
       try {
-        await QRCode.toFile("qrcode.png", qrContent);
+        await QRCode.toFile("qrcode.png", qrContent, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          scale: 8,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
         console.log("📸 二维码已保存到本地: qrcode.png");
       } catch {
         // ignore
