@@ -1,16 +1,17 @@
 /**
- * WeBot entry: multi-tenant email OTP console + single-worker ClawBot.
+ * WeBot entry: email OTP console API + single-worker ClawBot.
+ * UI is TanStack Start (Vite); Bun serves /api and (in prod) the built client.
  */
 
 import { ensureSchema, dbPath } from "./db";
 import { loadHomeEnv, printBanner, runBotLoop } from "./bot";
-import { startWebServer } from "./web";
+import { startApiServer } from "./api";
 
 loadHomeEnv();
 ensureSchema();
 console.log(`[DB] SQLite (Drizzle) at ${dbPath}`);
 
-startWebServer();
+startApiServer();
 
 process.on("SIGINT", () => {
   console.log("\n[System] 正在安全停止 WeBot 服务...");
@@ -23,8 +24,7 @@ process.on("SIGTERM", () => {
 
 const skipBot = process.env.WEBOT_SKIP_BOT === "1";
 if (skipBot) {
-  printBanner("WeBot console only", "WEBOT_SKIP_BOT=1 — ClawBot loop not started");
-  // Keep process alive for web server
+  printBanner("WeBot API + console", "WEBOT_SKIP_BOT=1 — ClawBot loop not started");
   await new Promise(() => {});
 } else {
   await runBotLoop();

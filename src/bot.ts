@@ -9,6 +9,12 @@ import os from "node:os";
 import path from "node:path";
 import QRCode from "qrcode";
 import { lanPage } from "./lan";
+import {
+  activateBindingByCode,
+  extractBindCodeFromText,
+  findActiveBindingByWechatUserId,
+} from "./auth/bindings";
+import { insertMessage } from "./auth/messages";
 
 const ILINK_BASE_URL = "https://ilinkai.weixin.qq.com";
 const SESSION_FILE = process.env.WECHAT_SESSION_FILE?.trim() || ".wechat_session.json";
@@ -481,7 +487,7 @@ export async function runBotLoop(): Promise<void> {
 
   printBanner(
     "WeChat ClawBot + DeepSeek (Bun & TS)",
-    `模型: ${model} | 历史重置: 发送 /reset 或 /clear | 控制台: /console`,
+    `模型: ${model} | 绑定: 向 ClawBot 发送绑定码或 /bind CODE | 控制台: /console`,
   );
 
   const wechat = new WeChatClient();
@@ -497,9 +503,7 @@ export async function runBotLoop(): Promise<void> {
   const seenMsgIds = new Set<string>();
 
   console.log("[System] 服务已就绪，进入实时长轮询监听...");
-  console.log(
-    "[System] ClawBot 仍为进程级单 worker；多租户账号体系见 /login（邮箱 OTP）。",
-  );
+  console.log("[System] 单 worker：微信用户通过控制台绑定码关联到 WeBot 账号。");
 
   while (true) {
     if (!wechat.botToken) {
@@ -535,25 +539,83 @@ export async function runBotLoop(): Promise<void> {
         }
       }
 
-      if (userText !== null) {
-        const text = userText.trim();
-        console.log(`[Message] 收到来自 [${fromUser.slice(0, 8)}...] 的文本: ${text}`);
-
-        if (text === "/reset" || text === "/clear") {
-          deepseek.resetUser(fromUser);
-          await wechat.sendMessage(fromUser, contextToken, "🧹 会话记忆已重置，我们可以重新开始！");
-        } else {
-          const reply = await deepseek.chat(fromUser, text);
-          await wechat.sendMessage(fromUser, contextToken, reply);
-        }
-      } else {
+      if (userText === null) {
         console.log(`[Message] 收到来自 [${fromUser.slice(0, 8)}...] 的非文本消息`);
         await wechat.sendMessage(
           fromUser,
           contextToken,
           "🤖 收到您的非文本消息，当前仅支持纯文本交互哦~",
         );
+        continue;
       }
+
+      const text = userText.trim();
+      console.log(`[Message] 收到来自 [${fromUser.slice(0, 8)}...] 的文本: ${text}`);
+
+      const maybeCode = extractBindCodeFromText(text);
+      if (maybeCode) {
+        const result = activateBindingByCode(maybeCode, fromUser);
+        if (result.ok) {
+          insertMessage({
+            userId: result.binding.userId,
+            wechatUserId: fromUser,
+            role: "system",
+            content: `WeChat bound via ${result.binding.bindCode}`,
+            wechatMessageId: msgId || null,
+          });
+          await wechat.sendMessage(
+            fromUser,
+            contextToken,
+            `✅ 绑定成功！之后发消息会记到你的 WeBot 控制台。发送 /reset 可清空对话记忆。`,
+          );
+        } else {
+          await wechat.sendMessage(
+            fromUser,
+            contextToken,
+            `❌ 绑定失败：${result.error}。请打开 WeBot 控制台核对绑定码，或发送 /bind 你的绑定码。`,
+          );
+        }
+        continue;
+      }
+
+      const binding = findActiveBindingByWechatUserId(fromUser);
+      if (!binding) {
+        await wechat.sendMessage(
+          fromUser,
+          contextToken,
+          "🔗 尚未绑定 WeBot 账号。请先邮箱登录控制台，复制绑定码，在此发送该码（或 /bind 绑定码）。",
+        );
+        continue;
+      }
+
+      if (text === "/reset" || text === "/clear") {
+        deepseek.resetUser(fromUser);
+        insertMessage({
+          userId: binding.userId,
+          wechatUserId: fromUser,
+          role: "system",
+          content: "session reset",
+          wechatMessageId: msgId || null,
+        });
+        await wechat.sendMessage(fromUser, contextToken, "🧹 会话记忆已重置，我们可以重新开始！");
+        continue;
+      }
+
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "user",
+        content: text,
+        wechatMessageId: msgId || null,
+      });
+      const reply = await deepseek.chat(fromUser, text);
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "assistant",
+        content: reply,
+      });
+      await wechat.sendMessage(fromUser, contextToken, reply);
     }
 
     await Bun.sleep(500);

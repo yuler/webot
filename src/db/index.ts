@@ -22,26 +22,13 @@ sqlite.exec("PRAGMA foreign_keys = ON;");
 export const db = drizzle(sqlite, { schema });
 export { schema, sqlite, dbPath };
 
-/** Apply schema for first-slice zero-ops (no separate migrate step required at boot). */
+/** Apply schema at boot (MVP: no separate migrate step required). */
 export function ensureSchema(): void {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY NOT NULL,
       email TEXT NOT NULL UNIQUE,
       created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS tenants (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS memberships (
-      user_id TEXT NOT NULL REFERENCES users(id),
-      tenant_id TEXT NOT NULL REFERENCES tenants(id),
-      role TEXT NOT NULL DEFAULT 'owner',
-      created_at TEXT NOT NULL,
-      PRIMARY KEY (user_id, tenant_id)
     );
     CREATE TABLE IF NOT EXISTS otp_codes (
       id TEXT PRIMARY KEY NOT NULL,
@@ -60,5 +47,37 @@ export function ensureSchema(): void {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS sessions_token_hash_idx ON sessions(token_hash);
+    CREATE TABLE IF NOT EXISTS wechat_bindings (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
+      bind_code TEXT NOT NULL UNIQUE,
+      wechat_user_id TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      bound_at TEXT,
+      disconnected_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS wechat_bindings_bind_code_idx ON wechat_bindings(bind_code);
+    CREATE INDEX IF NOT EXISTS wechat_bindings_wechat_user_id_idx ON wechat_bindings(wechat_user_id);
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      wechat_user_id TEXT,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      wechat_message_id TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS messages_user_id_idx ON messages(user_id);
+    CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at);
   `);
+
+  // Drop legacy multi-tenant tables if present (first-slice rename)
+  try {
+    sqlite.exec(`DROP TABLE IF EXISTS memberships;`);
+    sqlite.exec(`DROP TABLE IF EXISTS tenants;`);
+  } catch {
+    // ignore
+  }
 }

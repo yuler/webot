@@ -1,12 +1,19 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f864283a-2a94-4fe6-8dc2-38d5202ebe89",
+  "id": "b0e38f9a-2f2f-4bca-805e-af828955b08e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "memberships": {
-      "name": "memberships",
+    "messages": {
+      "name": "messages",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -14,11 +21,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "wechat_user_id": {
+          "name": "wechat_user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "role": {
@@ -26,8 +33,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "'owner'"
+          "autoincrement": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "wechat_message_id": {
+          "name": "wechat_message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
@@ -37,11 +57,26 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "messages_user_id_idx": {
+          "name": "messages_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "messages_created_at_idx": {
+          "name": "messages_created_at_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "memberships_user_id_users_id_fk": {
-          "name": "memberships_user_id_users_id_fk",
-          "tableFrom": "memberships",
+        "messages_user_id_users_id_fk": {
+          "name": "messages_user_id_users_id_fk",
+          "tableFrom": "messages",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -51,30 +86,9 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "memberships_tenant_id_tenants_id_fk": {
-          "name": "memberships_tenant_id_tenants_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "memberships_user_id_tenant_id_pk": {
-          "columns": [
-            "user_id",
-            "tenant_id"
-          ],
-          "name": "memberships_user_id_tenant_id_pk"
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -212,52 +226,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "tenants": {
-      "name": "tenants",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "tenants_slug_unique": {
-          "name": "tenants_slug_unique",
-          "columns": [
-            "slug"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "users": {
       "name": "users",
       "columns": {
@@ -293,6 +261,123 @@
         }
       },
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "wechat_bindings": {
+      "name": "wechat_bindings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bind_code": {
+          "name": "bind_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "wechat_user_id": {
+          "name": "wechat_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "bound_at": {
+          "name": "bound_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "disconnected_at": {
+          "name": "disconnected_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "wechat_bindings_user_id_unique": {
+          "name": "wechat_bindings_user_id_unique",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        },
+        "wechat_bindings_bind_code_unique": {
+          "name": "wechat_bindings_bind_code_unique",
+          "columns": [
+            "bind_code"
+          ],
+          "isUnique": true
+        },
+        "wechat_bindings_bind_code_idx": {
+          "name": "wechat_bindings_bind_code_idx",
+          "columns": [
+            "bind_code"
+          ],
+          "isUnique": false
+        },
+        "wechat_bindings_wechat_user_id_idx": {
+          "name": "wechat_bindings_wechat_user_id_idx",
+          "columns": [
+            "wechat_user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "wechat_bindings_user_id_users_id_fk": {
+          "name": "wechat_bindings_user_id_users_id_fk",
+          "tableFrom": "wechat_bindings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

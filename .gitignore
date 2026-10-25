@@ -26,3 +26,8 @@ data/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+
+# Test / build outputs
+dist/
+.output/
+data/
