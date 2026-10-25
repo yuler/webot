@@ -1,5 +1,5 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
-import { AppBar } from "@/components/AppBar";
+import { AppShell } from "@/components/AppShell";
 
 const rootRouteApi = getRouteApi("__root__");
 
@@ -30,9 +30,7 @@ function LandingPage() {
   const loggedIn = Boolean(me);
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-10">
-      <AppBar />
-
+    <AppShell size="lg">
       <section className="landing-hero">
         <p className="type-kicker text-ink">WEBOT</p>
         <h1 className="type-title mt-3">微信里的 AI 助手</h1>
@@ -90,6 +88,6 @@ function LandingPage() {
         </a>
         。
       </footer>
-    </main>
+    </AppShell>
   );
 }
