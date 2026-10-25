@@ -361,32 +361,67 @@
   color: var(--color-solid-ink);
 }
 
-.app-bar-bot {
+.app-bar-home {
   display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  padding: 4px 8px;
-  border: 1px solid var(--color-line);
-  border-radius: 0;
+  gap: 10px;
+  min-width: 0;
   color: var(--color-ink);
-  letter-spacing: 0.12em;
   text-decoration: none;
 }
 
-.app-bar-bot:hover {
-  border-color: var(--color-ink);
+.app-bar-home:hover {
   color: var(--color-ink);
   text-decoration: none;
+}
+
+.app-bar-home:hover .app-bar-logo-frame {
+  border-color: var(--color-ink);
+}
+
+.app-bar-logo-frame {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: 0;
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
+
+.app-bar-logo-mark {
+  display: block;
+  width: 28px;
+  height: 28px;
 }
 
 .app-bar-brand {
   text-decoration: none;
+  letter-spacing: 0.18em;
 }
 
-.app-bar-brand:hover {
-  color: var(--color-ink);
-  text-decoration: none;
+/* K41-style stroke draw-in for weBOT mark */
+.webot-logo path {
+  stroke-dasharray: 1 2;
+  animation: webot-logo-draw 0.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes webot-logo-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webot-logo path {
+    animation: none;
+  }
 }
 
 /* Landing homepage */

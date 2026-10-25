@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边 logo + `Webot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
+> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边动画 SVG logo（`LogoMark`）+ `weBOT`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 
@@ -50,7 +50,7 @@
 
 ### `AppBar`
 
-顶栏极简。左是 logo（`BOT`）+ `Webot`（链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。
+顶栏极简。左是 `LogoMark`（K41 风格描边动画 SVG，几何「W」）+ `weBOT` 字标（首页为 `<span>`，其它页链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。不再单独放「BOT」方块或重复的 `Webot` 文案。
 
 ### `Timeline`
 
