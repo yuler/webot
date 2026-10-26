@@ -20,7 +20,7 @@ export function LogoMark({
       aria-label={title}
       className={className}
     >
-      <path fill="currentColor" fillRule="evenodd" transform="translate(-1 3) scale(1.12)" d={WECHAT} />
+      <path fill="currentColor" fillRule="evenodd" transform="translate(1.4 4.6) scale(0.96)" d={WECHAT} />
       <rect x="14" y="0" width="14" height="10" fill="var(--color-ground)" />
       <rect x="15" y="1" width="12" height="8" fill="currentColor" />
       <text
