@@ -27,5 +27,8 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      - name: Build web
+        run: bun run web:build
+
       - name: Test
         run: bun test
