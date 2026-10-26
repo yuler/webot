@@ -271,8 +271,16 @@
   color: var(--color-solid-ink);
 }
 
-.btn-solid.is-loading:disabled,
+.btn-solid.is-loading:disabled {
+  border-color: var(--color-solid);
+  background: var(--color-solid);
+  color: var(--color-solid-ink);
+  opacity: 0.85;
+  cursor: wait;
+}
+
 .btn-ghost.is-loading:disabled {
+  color: var(--color-ink);
   opacity: 0.85;
   cursor: wait;
 }
@@ -297,10 +305,11 @@
 
 .btn-spinner {
   display: inline-block;
-  width: 0.75em;
-  height: 0.75em;
-  border: 1.5px solid currentColor;
-  border-right-color: transparent;
+  width: 0.85em;
+  height: 0.85em;
+  border: 1.75px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50% !important;
   flex-shrink: 0;
   animation: btn-spin 0.65s linear infinite;
 }

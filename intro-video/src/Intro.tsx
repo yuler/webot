@@ -23,8 +23,8 @@ const CAMERA_TRACK: [number, number, number, number][] = [
   // Step 3: WeChat bind
   [520, 1445, 500, 1.2],
   // Step 4: Zoom into WeChat chat
-  [560, 1445, 520, 1.22],
-  [730, 1445, 520, 1.22],
+  [560, 1445, 505, 1.22],
+  [730, 1445, 505, 1.22],
   // Outro: Camera pulls back to reveal the whole scene
   [770, 960, 540, 0.94],
   [TOTAL_FRAMES, 960, 540, 0.94],
@@ -33,23 +33,23 @@ const CAMERA_TRACK: [number, number, number, number][] = [
 // Mouse Cursor Path Points (in world coordinates)
 const CURSOR_PATH: CursorPathPoint[] = [
   // Step 1: Moves to email input and clicks send button
-  { frame: 10, x: 260, y: 460 },
-  { frame: 45, x: 380, y: 460 },
-  { frame: 68, x: 250, y: 520 }, // Send button
-  { frame: 80, x: 250, y: 520 },
-  { frame: 120, x: 400, y: 620 },
+  { frame: 10, x: 280, y: 608 },
+  { frame: 45, x: 420, y: 608 },
+  { frame: 68, x: 280, y: 700 }, // Send button
+  { frame: 80, x: 280, y: 700 },
+  { frame: 120, x: 380, y: 750 },
   // Step 2: Moves to Copy Button on Console
-  { frame: 200, x: 500, y: 450 },
-  { frame: 280, x: 800, y: 450 },
-  { frame: 328, x: 920, y: 455 }, // Copy button
-  { frame: 345, x: 920, y: 455 },
+  { frame: 200, x: 500, y: 550 },
+  { frame: 280, x: 750, y: 600 },
+  { frame: 328, x: 885, y: 615 }, // Copy button
+  { frame: 345, x: 885, y: 615 },
   // Disappears during phone view
   { frame: 370, x: 1200, y: 500 },
 ];
 
 const CURSOR_CLICKS: ClickPoint[] = [
-  { frame: 70, x: 250, y: 520 }, // Click "发送登录邮件"
-  { frame: 330, x: 920, y: 455 }, // Click "复制命令"
+  { frame: 70, x: 280, y: 700 }, // Click "发送登录邮件"
+  { frame: 330, x: 885, y: 615 }, // Click "复制命令"
 ];
 
 function getCamera(frame: number) {
