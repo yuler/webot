@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边动画 SVG logo（`LogoMark`）+ `WeBot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
+> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边 SVG logo（`LogoMark`，微信图标 + 右上角 AI 角标）+ `WeBot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 
@@ -50,7 +50,7 @@
 
 ### `AppBar`
 
-顶栏极简。左是 `LogoMark`（描边动画 SVG：大气泡是带天线和眼睛的机器人头，右上角叠微信小气泡，直角）+ `WeBot` 字标（首页为 `<span>`，其它页链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。
+顶栏极简。左是 `LogoMark`（微信双气泡图标，右上角叠 `AI` 角标，颜色跟 `ink`）+ `WeBot` 字标（首页为 `<span>`，其它页链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。
 
 ### `Timeline`
 
@@ -95,4 +95,4 @@
 - 不可逆操作（断开绑定、清空聊天记录）先 `confirm`。
 - 输入框按语义设 `inputMode` / `enterKeyHint` / `autoComplete`；手机端字号 ≥16px，防 iOS 缩放。
 - 系统 `theme-color` 跟随 `ground`，手机浏览器栏与页面同色。
-- `prefers-reduced-motion` 时关掉 logo 描边、转圈和过渡。
+- `prefers-reduced-motion` 时关掉转圈和过渡。
