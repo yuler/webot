@@ -35,9 +35,9 @@ const skipBot = process.env.WEBOT_SKIP_BOT === "1";
 if (skipBot) {
   printBanner("WeBot API + console", "WEBOT_SKIP_BOT=1 — per-user ClawBot workers not started");
 } else {
-  const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+  const model = process.env.AI_MODEL?.trim() || process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
   printBanner(
-    "WeChat ClawBot + DeepSeek (per-user)",
+    "WeChat ClawBot + AI (per-user)",
     `模型: ${model} | 每用户独立扫码/凭据 | 控制台: /console`,
   );
   startClawRuntime();

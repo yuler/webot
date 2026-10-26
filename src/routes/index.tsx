@@ -31,7 +31,7 @@ const STEPS = [
   {
     n: "04",
     title: "开始对话",
-    body: "绑定后微信消息由 DeepSeek 智能回复，对话记录在控制台随时回看。",
+    body: "绑定后微信消息由 AI 智能回复，对话记录在控制台随时回看。",
   },
 ] as const;
 
@@ -43,12 +43,11 @@ function LandingPage() {
     <AppShell size="lg">
       <section className="landing-hero" aria-labelledby="hero-heading">
         <div className="landing-hero-copy">
-          <p className="type-kicker text-gray">WECHAT × DEEPSEEK</p>
           <h1 id="hero-heading" className="type-title">
             微信里的 AI 助手
           </h1>
           <p className="type-meta max-w-xl">
-            用邮箱魔法链接登录，在控制台扫码并复制绑定命令，即可在微信里和 DeepSeek 对话。
+            用邮箱魔法链接登录，在控制台扫码并复制绑定命令，即可在微信里和 AI 助手对话。
           </p>
           <ul className="landing-points type-meta">
             {POINTS.map((p) => (
@@ -115,14 +114,6 @@ function LandingPage() {
           )}
         </div>
       </section>
-
-      <footer className="landing-footer type-meta">
-        登录只要邮箱魔法链接；扫码与绑定都在控制台。生产站{" "}
-        <a href="https://webot.yuler.dev/" className="link text-ink">
-          webot.yuler.dev
-        </a>
-        。
-      </footer>
     </AppShell>
   );
 }

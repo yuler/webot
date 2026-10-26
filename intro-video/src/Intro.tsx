@@ -13,20 +13,19 @@ import { Music, Sfx } from './sound';
 const CAMERA_TRACK: [number, number, number, number][] = [
   // Step 1: Focus on Login Card
   [0, 500, 530, 1.35],
-  [150, 500, 530, 1.35],
-  // Step 2: Shift to Console QR & bind command
-  [180, 640, 530, 1.32],
-  [340, 680, 530, 1.32],
+  [145, 500, 530, 1.35],
+  // Step 2: Smooth shift to Console QR & bind command
+  [185, 630, 530, 1.30],
+  [340, 630, 530, 1.30],
   // Camera scroll / pan across from Browser to Phone!
-  [370, 750, 530, 1.25],
-  [410, 1445, 500, 1.2],
+  [380, 1445, 520, 1.20],
   // Step 3: WeChat bind
-  [520, 1445, 500, 1.2],
-  // Step 4: Zoom into WeChat chat
-  [560, 1445, 505, 1.22],
-  [730, 1445, 505, 1.22],
+  [545, 1445, 520, 1.20],
+  // Step 4: Gentle push-in to WeChat chat
+  [580, 1445, 510, 1.26],
+  [740, 1445, 510, 1.26],
   // Outro: Camera pulls back to reveal the whole scene
-  [770, 960, 540, 0.94],
+  [785, 960, 540, 0.94],
   [TOTAL_FRAMES, 960, 540, 0.94],
 ];
 
@@ -39,12 +38,12 @@ const CURSOR_PATH: CursorPathPoint[] = [
   { frame: 80, x: 280, y: 700 },
   { frame: 120, x: 380, y: 750 },
   // Step 2: Moves to Copy Button on Console
-  { frame: 200, x: 500, y: 550 },
+  { frame: 195, x: 500, y: 550 },
   { frame: 280, x: 750, y: 600 },
   { frame: 328, x: 885, y: 615 }, // Copy button
   { frame: 345, x: 885, y: 615 },
-  // Disappears during phone view
-  { frame: 370, x: 1200, y: 500 },
+  // Disappears during camera pan
+  { frame: 355, x: 980, y: 630 },
 ];
 
 const CURSOR_CLICKS: ClickPoint[] = [
@@ -52,23 +51,36 @@ const CURSOR_CLICKS: ClickPoint[] = [
   { frame: 330, x: 885, y: 615 }, // Click "复制命令"
 ];
 
+const easeSmooth = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
 function getCamera(frame: number) {
-  const frames = CAMERA_TRACK.map((k) => k[0]);
-  const cxs = CAMERA_TRACK.map((k) => k[1]);
-  const cys = CAMERA_TRACK.map((k) => k[2]);
-  const zooms = CAMERA_TRACK.map((k) => k[3]);
+  if (frame <= CAMERA_TRACK[0][0]) {
+    const first = CAMERA_TRACK[0];
+    return { cx: first[1], cy: first[2], zoom: first[3] };
+  }
+  const last = CAMERA_TRACK[CAMERA_TRACK.length - 1];
+  if (frame >= last[0]) {
+    return { cx: last[1], cy: last[2], zoom: last[3] };
+  }
 
-  const ease = {
-    easing: Easing.inOut(Easing.cubic),
-    extrapolateLeft: 'clamp' as const,
-    extrapolateRight: 'clamp' as const,
-  };
+  for (let i = 0; i < CAMERA_TRACK.length - 1; i++) {
+    const a = CAMERA_TRACK[i];
+    const b = CAMERA_TRACK[i + 1];
+    if (frame >= a[0] && frame <= b[0]) {
+      if (a[0] === b[0] || (a[1] === b[1] && a[2] === b[2] && a[3] === b[3])) {
+        return { cx: a[1], cy: a[2], zoom: a[3] };
+      }
+      const t = (frame - a[0]) / (b[0] - a[0]);
+      const k = easeSmooth(t);
+      return {
+        cx: a[1] + (b[1] - a[1]) * k,
+        cy: a[2] + (b[2] - a[2]) * k,
+        zoom: a[3] + (b[3] - a[3]) * k,
+      };
+    }
+  }
 
-  const cx = interpolate(frame, frames, cxs, ease);
-  const cy = interpolate(frame, frames, cys, ease);
-  const zoom = interpolate(frame, frames, zooms, ease);
-
-  return { cx, cy, zoom };
+  return { cx: last[1], cy: last[2], zoom: last[3] };
 }
 
 export const Intro: React.FC = () => {
@@ -135,18 +147,18 @@ export const Intro: React.FC = () => {
       <Sfx name="typing" at={24} duration={38} />
       <Sfx name="click" at={70} />
       <Sfx name="pop" at={85} />
-      <Sfx name="whoosh" at={180} />
+      <Sfx name="whoosh" at={160} />
       <Sfx name="pop" at={260} />
       <Sfx name="click" at={330} />
-      <Sfx name="whoosh" at={370} />
-      <Sfx name="typing" at={382} duration={32} />
-      <Sfx name="pop" at={422} />
-      <Sfx name="pop" at={458} />
-      <Sfx name="whoosh" at={560} />
-      <Sfx name="typing" at={572} duration={38} />
+      <Sfx name="whoosh" at={340} />
+      <Sfx name="typing" at={385} duration={30} />
+      <Sfx name="pop" at={420} />
+      <Sfx name="pop" at={455} />
+      <Sfx name="whoosh" at={545} />
+      <Sfx name="typing" at={575} duration={37} />
       <Sfx name="pop" at={615} />
-      <Sfx name="pop" at={638} />
-      <Sfx name="whoosh" at={750} />
+      <Sfx name="pop" at={635} />
+      <Sfx name="whoosh" at={740} />
 
       {/* Top Step Progress Bar */}
       <Steps />
@@ -170,7 +182,7 @@ export const Intro: React.FC = () => {
         <PhoneMockup x={1220} y={160} width={450} height={760} />
 
         {/* Animated Mouse Cursor (Visible in Step 1 & 2) */}
-        <Cursor path={CURSOR_PATH} clicks={CURSOR_CLICKS} visibleRange={[10, 370]} />
+        <Cursor path={CURSOR_PATH} clicks={CURSOR_CLICKS} visibleRange={[10, 355]} />
       </div>
 
       {/* Outro Overlay Card (Frame >= 750) */}
@@ -238,7 +250,7 @@ export const Intro: React.FC = () => {
                 fontWeight: 400,
               }}
             >
-              微信里的 AI 助手 · DeepSeek 深度赋能
+              微信里的 AI 助手 · 极简配置
             </p>
 
             <div

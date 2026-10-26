@@ -1,6 +1,6 @@
-# WeBot — ClawBot + DeepSeek + 邮箱登录控制台
+# WeBot — ClawBot + AI + 邮箱登录控制台
 
-Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + DeepSeek 回复；控制台用 **React + TanStack Start/Router/Query**，数据用 **SQLite + Drizzle**。
+Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + 大模型（AI）回复；控制台用 **React + TanStack Start/Router/Query**，数据用 **SQLite + Drizzle**。大模型底座兼容任意 OpenAI 格式接口（DeepSeek、Qwen、Kimi、OpenAI 等）。
 
 **生产：** [https://webot.yuler.dev/](https://webot.yuler.dev/)
 

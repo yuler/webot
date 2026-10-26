@@ -35,7 +35,7 @@ export const STEPS: StepDef[] = [
   {
     num: '04',
     title: '畅聊对话',
-    note: '微信直连 DeepSeek，随时随地开启智能对话',
+    note: '微信直连大模型，随时随地开启智能对话',
     startFrame: 560,
     endFrame: 750,
   },

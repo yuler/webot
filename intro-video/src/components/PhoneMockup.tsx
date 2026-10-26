@@ -13,10 +13,10 @@ export const PhoneMockup: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Step 3: Typing bind command (Frame 380 - 415)
+  // Step 3: Typing bind command (Frame 385 - 418)
   const bindCmd = '/bind 849201';
   const bindTypeChars = Math.floor(
-    interpolate(frame, [380, 415], [0, bindCmd.length], {
+    interpolate(frame, [385, 418], [0, bindCmd.length], {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
     })
@@ -26,15 +26,15 @@ export const PhoneMockup: React.FC<{
   // User sent bind command at frame 420
   const bindSent = frame >= 420;
 
-  // Bot typing indicator during frame 428 - 458
-  const botBindTyping = frame >= 428 && frame < 458;
-  // Bot bind reply appears at frame 458
-  const botBindReplied = frame >= 458;
+  // Bot typing indicator during frame 426 - 455
+  const botBindTyping = frame >= 426 && frame < 455;
+  // Bot bind reply appears at frame 455
+  const botBindReplied = frame >= 455;
 
-  // Step 4: Typing prompt (Frame 570 - 612)
+  // Step 4: Typing prompt (Frame 575 - 612)
   const promptText = '请写一段 Python 脚本，提取 PDF 里的表格';
   const promptChars = Math.floor(
-    interpolate(frame, [570, 612], [0, promptText.length], {
+    interpolate(frame, [575, 612], [0, promptText.length], {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
     })
@@ -44,8 +44,8 @@ export const PhoneMockup: React.FC<{
   // User sent prompt at frame 615
   const promptSent = frame >= 615;
 
-  // DeepSeek streaming response (Frame 635 - 720)
-  const deepseekStreaming = frame >= 635;
+  // AI model streaming response (Frame 635 - 720)
+  const aiStreaming = frame >= 635;
   const botResponseSpring = spring({
     frame: frame - 635,
     fps,
@@ -327,7 +327,7 @@ export const PhoneMockup: React.FC<{
             >
               🎉 <strong>绑定成功！</strong>
               <div style={{ marginTop: 4, color: color.gray }}>
-                已为您连接 <strong>DeepSeek-V3</strong>。随时在此向我提问，无论是写代码、分析问题还是知识解答。
+                已为您连接 <strong>大语言模型</strong>。随时在此向我提问，无论是写代码、分析问题还是知识解答。
               </div>
             </div>
           </div>
@@ -362,8 +362,8 @@ export const PhoneMockup: React.FC<{
           </div>
         )}
 
-        {/* Step 4: DeepSeek response (Frame >= 635) */}
-        {deepseekStreaming && (
+        {/* Step 4: AI response (Frame >= 635) */}
+        {aiStreaming && (
           <div
             style={{
               display: 'flex',
@@ -402,7 +402,7 @@ export const PhoneMockup: React.FC<{
               }}
             >
               <div style={{ color: color.ink, fontWeight: 700, marginBottom: 4 }}>
-                🤖 DeepSeek 回复：
+                🤖 AI 智能回复：
               </div>
               推荐使用 <code>pdfplumber</code>，提取精准且高效：
               <div

@@ -44,9 +44,18 @@ function skipBot(): boolean {
 
 function getDeepseek(): DeepSeekBot {
   if (!deepseek) {
-    const apiKey = process.env.DEEPSEEK_API_KEY?.trim() || "";
-    const baseUrl = process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com";
-    const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const apiKey =
+      process.env.AI_API_KEY?.trim() ||
+      process.env.DEEPSEEK_API_KEY?.trim() ||
+      "";
+    const baseUrl =
+      process.env.AI_BASE_URL?.trim() ||
+      process.env.DEEPSEEK_BASE_URL?.trim() ||
+      "https://api.deepseek.com";
+    const model =
+      process.env.AI_MODEL?.trim() ||
+      process.env.DEEPSEEK_MODEL?.trim() ||
+      "deepseek-chat";
     deepseek = new DeepSeekBot(apiKey, baseUrl, model);
     onChatMemoryReset((wechatUserId) => deepseek!.resetUser(wechatUserId));
   }

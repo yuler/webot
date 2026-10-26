@@ -13,9 +13,26 @@ export const BrowserMockup: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Phase transition: Frame 180 transitions from /login to /console
-  const isConsole = frame >= 180;
+  // Smooth page transition between Frame 155 and 190
+  const isConsole = frame >= 175;
   const addressUrl = isConsole ? 'webot.yuler.dev/console' : 'webot.yuler.dev/login';
+
+  const loginOpacity = interpolate(frame, [155, 172], [1, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const consoleOpacity = interpolate(frame, [172, 190], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const navBarProgress = interpolate(frame, [158, 178], [0, 100], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const navBarOpacity = interpolate(frame, [158, 164, 178, 184], [0, 1, 1, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   // Step 1: Email typing animation (Frame 20 - 65)
   const fullEmail = 'yule@example.com';
@@ -105,8 +122,23 @@ export const BrowserMockup: React.FC<{
             fontSize: 14,
             color: color.gray,
             fontFamily: font.mono,
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
+          {navBarOpacity > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                bottom: 0,
+                height: 2,
+                width: `${navBarProgress}%`,
+                background: color.ink,
+                opacity: navBarOpacity,
+              }}
+            />
+          )}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color.ink} strokeWidth="2.5">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -120,7 +152,7 @@ export const BrowserMockup: React.FC<{
       {/* Browser Body */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: color.ground }}>
         {/* ================= STEP 1: LOGIN VIEW ================= */}
-        {!isConsole && (
+        {frame < 175 && (
           <div
             style={{
               padding: '36px 54px',
@@ -128,6 +160,8 @@ export const BrowserMockup: React.FC<{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
+              opacity: loginOpacity,
+              transform: `translateY(${(1 - loginOpacity) * -8}px)`,
             }}
           >
             {/* Header Brand */}
@@ -166,7 +200,7 @@ export const BrowserMockup: React.FC<{
                   letterSpacing: '0.05em',
                 }}
               >
-                CLAWBOT + DEEPSEEK
+                CLAWBOT + AI MODEL
               </span>
             </div>
 
@@ -270,7 +304,7 @@ export const BrowserMockup: React.FC<{
         )}
 
         {/* ================= STEP 2: CONSOLE VIEW ================= */}
-        {isConsole && (
+        {frame >= 170 && (
           <div
             style={{
               padding: '32px 48px',
@@ -278,6 +312,8 @@ export const BrowserMockup: React.FC<{
               display: 'flex',
               flexDirection: 'column',
               gap: 20,
+              opacity: consoleOpacity,
+              transform: `translateY(${(1 - consoleOpacity) * 8}px)`,
             }}
           >
             {/* Top Bar inside Console */}
@@ -514,7 +550,7 @@ export const BrowserMockup: React.FC<{
                 </div>
 
                 <div style={{ fontSize: 12, color: color.gray, lineHeight: 1.5 }}>
-                  💡 提示：绑定后您的微信账号即与 DeepSeek 关联，所有聊天记录均可在本控制台实时回看。
+                  💡 提示：绑定后您的微信账号即与 AI 助手关联，所有聊天记录均可在本控制台实时回看。
                 </div>
               </div>
             </div>

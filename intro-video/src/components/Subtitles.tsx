@@ -44,13 +44,13 @@ export const SUBTITLES: SubtitleItem[] = [
     start: 465,
     end: 560,
     tag: '第 3 步',
-    text: '机器人秒级确认绑定成功，已接入 DeepSeek AI 大模型',
+    text: '机器人秒级确认绑定成功，已接入 AI 大模型',
   },
   {
     start: 560,
     end: 655,
     tag: '第 4 步',
-    text: '在微信随时提出任何问题，DeepSeek 实时智能作答',
+    text: '在微信随时提出任何问题，AI 实时智能作答',
   },
   {
     start: 655,

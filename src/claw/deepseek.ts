@@ -18,7 +18,7 @@ export class DeepSeekBot {
 
   public async chat(userId: string, userPrompt: string): Promise<string> {
     if (!this.apiKey) {
-      return "⚠️ 服务端还没有配置 DEEPSEEK_API_KEY，暂时无法回复。";
+      return "⚠️ 服务端还没有配置 AI 模型的 API_KEY，暂时无法回复。";
     }
 
     let history = this.histories.get(userId);
@@ -31,7 +31,7 @@ export class DeepSeekBot {
       {
         role: "system",
         content:
-          "你是运行在微信里的智能助手，由 DeepSeek 提供强大支持。回答简明得体、排版易于微信移动端阅读。",
+          "你是运行在微信里的智能助手。回答简明得体、排版易于微信移动端阅读。",
       },
       ...history,
       { role: "user", content: userPrompt },
@@ -54,15 +54,15 @@ export class DeepSeekBot {
 
       if (!resp.ok) {
         const errorText = await resp.text();
-        console.error(`[DeepSeek] 接口错误: ${resp.status} - ${errorText}`);
-        return `⚠️ 调用 DeepSeek API 异常 (${resp.status})，请检查 API Key 或配置。`;
+        console.error(`[AI] 接口错误: ${resp.status} - ${errorText}`);
+        return `⚠️ 调用 AI API 异常 (${resp.status})，请检查 API Key 或配置。`;
       }
 
       const data = (await resp.json()) as {
         choices?: Array<{ message: { content: string } }>;
       };
 
-      const reply = data.choices?.[0]?.message?.content?.trim() || "⚠️ DeepSeek 返回了空内容。";
+      const reply = data.choices?.[0]?.message?.content?.trim() || "⚠️ AI 返回了空内容。";
 
       history.push({ role: "user", content: userPrompt });
       history.push({ role: "assistant", content: reply });
@@ -72,7 +72,7 @@ export class DeepSeekBot {
 
       return reply;
     } catch (err: any) {
-      console.error("[DeepSeek] API 请求异常:", err.message);
+      console.error("[AI] API 请求异常:", err.message);
       return "⚠️ 抱歉，当前处理回复超时或发生网络异常，请重试。";
     }
   }

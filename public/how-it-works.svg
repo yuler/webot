@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 140" role="img" aria-labelledby="title desc">
   <title id="title">WeBot 工作流程</title>
-  <desc id="desc">邮箱登录 → 微信发绑定码给 ClawBot → DeepSeek 回复 → 控制台看消息</desc>
+  <desc id="desc">邮箱登录 → 微信发绑定码给 ClawBot → AI 回复 → 控制台看消息</desc>
   <style>
     .box { fill: none; stroke: currentColor; stroke-width: 1; }
     .lab { font-family: "Noto Sans CJK SC", "Source Han Sans SC", "Noto Sans SC", sans-serif; font-size: 13px; fill: currentColor; }
@@ -22,7 +22,7 @@
   <polygon fill="currentColor" points="386,60 396,64 386,68"/>
 
   <rect class="box" x="404" y="28" width="140" height="72"/>
-  <text class="lab" x="474" y="58" text-anchor="middle">DeepSeek 回复</text>
+  <text class="lab" x="474" y="58" text-anchor="middle">AI 回复</text>
   <text class="sub" x="474" y="78" text-anchor="middle">ClawBot 长轮询</text>
 
   <path class="arr" d="M552 64 H584"/>
