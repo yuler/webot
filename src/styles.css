@@ -251,9 +251,16 @@
   background: var(--color-wash);
 }
 
-.btn-solid:disabled,
+/* Disabled solid turns into an outline, never a gray block. */
+.btn-solid:disabled {
+  border-color: var(--color-line);
+  background: transparent;
+  color: var(--color-gray);
+  cursor: not-allowed;
+}
+
 .btn-ghost:disabled {
-  opacity: 0.45;
+  color: var(--color-gray);
   cursor: not-allowed;
 }
 
@@ -340,28 +347,21 @@
   border-bottom-color: var(--color-ink);
 }
 
-.field--code {
-  font-size: 22px !important;
-  letter-spacing: 0.4em;
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- Notice (status / error lines) ---------- */
 
 .notice {
   display: flex;
   gap: 10px;
   align-items: baseline;
-  border: 1px solid var(--color-line);
-  background: var(--color-wash);
+  border-left: 1px solid var(--color-line);
   color: var(--color-ink);
-  padding: 10px 12px;
+  padding: 2px 0 2px 12px;
   font-size: 14px;
   line-height: 1.45;
 }
 
 .notice--error {
-  border-color: var(--color-ink);
+  border-left-color: var(--color-ink);
 }
 
 .notice-tag {
@@ -586,25 +586,22 @@
 
 /* ---------- Panel ---------- */
 
-/* Phones: edge-to-edge sheet with top/bottom lines. md+: boxed. */
+/* No fill. Phones: sections split by a single 1px line. md+: 1px outlined box. */
 .panel {
   border-top: 1px solid var(--color-line);
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-wash);
-  margin-inline: calc(-1 * var(--gutter));
-  padding: 18px var(--gutter) 20px;
+  background: transparent;
+  padding: 20px 0 24px;
 }
 
 @media (min-width: 768px) {
   .panel {
     border: 1px solid var(--color-line);
-    margin-inline: 0;
     padding: 24px;
   }
-}
 
-.panel + .panel {
-  margin-top: 12px;
+  .panel + .panel {
+    margin-top: 16px;
+  }
 }
 
 .panel-head {
@@ -901,32 +898,109 @@
   opacity: 0.6;
 }
 
-/* ---------- Disclosure ---------- */
+/* ---------- OtpField (6 boxes over one real input) ---------- */
 
-.disclosure > summary {
+.otp {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 336px;
+}
+
+.otp-cell {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: var(--tap);
-  cursor: pointer;
-  list-style: none;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-line);
   color: var(--color-ink);
-}
-
-.disclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.disclosure > summary::after {
-  content: "+";
-  color: var(--color-gray);
-  font-size: 18px;
+  font-size: 24px;
+  font-weight: 500;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 120ms ease;
 }
 
-.disclosure[open] > summary::after {
-  content: "−";
+.otp-cell.is-filled {
+  border-color: var(--color-gray);
+}
+
+.otp-cell.is-active {
+  border-color: var(--color-ink);
+}
+
+.otp-cell.is-active:empty::after {
+  content: "";
+  width: 1px;
+  height: 1em;
+  background: var(--color-ink);
+  animation: otp-caret 1s steps(2, jump-none) infinite;
+}
+
+@keyframes otp-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.otp[data-invalid="true"] .otp-cell {
+  border-color: var(--color-ink);
+}
+
+.otp[data-disabled="true"] .otp-cell {
+  opacity: 0.5;
+}
+
+/* The real input covers the boxes so taps, paste and one-time-code autofill all hit it. */
+.otp-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  letter-spacing: 0;
+  opacity: 0;
+  cursor: text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otp-cell.is-active:empty::after {
+    animation: none;
+  }
+}
+
+/* ---------- Tips (link vs code) ---------- */
+
+.tips {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+}
+
+.tips dt {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.tips dd {
+  margin: 2px 0 0;
+}
+
+@media (min-width: 768px) {
+  .tips {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+  }
 }
 
 /* ---------- Landing ---------- */
@@ -975,16 +1049,17 @@
 
 .landing-video {
   justify-self: center;
-  width: min(100%, 260px);
+  width: 100%;
+  max-width: 520px;
   border: 1px solid var(--color-line);
-  background: var(--color-wash);
   padding: 8px;
+  background: var(--color-wash);
 }
 
 .landing-video video {
   display: block;
   width: 100%;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 16 / 9;
   height: auto;
   background: #000;
   object-fit: cover;
@@ -997,7 +1072,7 @@
 
 @media (min-width: 768px) {
   .landing-hero {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
     align-items: center;
     gap: 40px;
     padding-bottom: 48px;
@@ -1010,13 +1085,14 @@
 
 @media (min-width: 1024px) {
   .landing-hero {
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 64px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(420px, 500px);
+    gap: 48px;
     padding-block: 24px 64px;
   }
 
   .landing-video {
-    width: 320px;
+    width: 100%;
+    max-width: 500px;
   }
 }
 

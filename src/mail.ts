@@ -103,14 +103,19 @@ export async function sendLoginEmail(
   to: string,
   payload: { code: string; magicUrl: string },
 ): Promise<void> {
-  const subject = "Your WeBot login link";
+  const subject = `WeBot 登录验证码 ${payload.code}`;
   const text = [
-    `Sign in to WeBot with this magic link (expires in 10 minutes):`,
-    payload.magicUrl,
+    `你正在登录 WeBot，以下两种方式任选其一（10 分钟内有效）：`,
     ``,
-    `Backup one-time code (optional): ${payload.code}`,
+    `方式一：在登录页输入验证码`,
+    `    ${payload.code}`,
+    `    适合：邮件在手机上打开，但要在电脑上登录。`,
     ``,
-    `If you did not request this, ignore this email.`,
+    `方式二：直接点开魔法链接`,
+    `    ${payload.magicUrl}`,
+    `    适合：就在当前设备登录。链接在哪个浏览器打开，就登录哪个浏览器。`,
+    ``,
+    `如果不是你本人操作，忽略这封邮件即可。`,
   ].join("\n");
 
   if (smtpConfigured()) {
