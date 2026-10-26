@@ -71,23 +71,17 @@ export const Steps: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          background: 'rgba(15, 20, 30, 0.75)',
+          background: 'rgba(255, 255, 255, 0.95)',
           padding: '8px 18px',
           borderRadius: 999,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${color.line}`,
           backdropFilter: 'blur(16px)',
-          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
         }}
       >
         {STEPS.map((step, i) => {
           const isActive = i === currentStep;
           const isDone = i < currentStep;
-
-          const p = spring({
-            frame: frame - step.startFrame,
-            fps,
-            config: { damping: 14, stiffness: 140 },
-          });
 
           return (
             <div key={step.num} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -96,11 +90,7 @@ export const Steps: React.FC = () => {
                   style={{
                     width: 28,
                     height: 2,
-                    background: isDone
-                      ? color.wechat
-                      : isActive
-                      ? color.brand
-                      : 'rgba(255, 255, 255, 0.15)',
+                    background: isDone || isActive ? color.ink : color.line,
                     transition: 'background 0.3s ease',
                   }}
                 />
@@ -114,23 +104,23 @@ export const Steps: React.FC = () => {
                   padding: '0 18px 0 8px',
                   borderRadius: 999,
                   background: isActive
-                    ? 'rgba(56, 189, 248, 0.15)'
+                    ? color.solid
                     : isDone
-                    ? 'rgba(7, 193, 96, 0.12)'
+                    ? color.wash
                     : 'transparent',
                   border: `1.5px solid ${
                     isActive
-                      ? color.brand
+                      ? color.solid
                       : isDone
-                      ? color.wechat
-                      : 'rgba(255, 255, 255, 0.08)'
+                      ? color.line
+                      : 'transparent'
                   }`,
-                  color: isActive ? '#fff' : isDone ? '#e2e8f0' : color.secondary,
+                  color: isActive ? color.solidInk : isDone ? color.ink : color.gray,
                   fontFamily: font.sans,
-                  fontSize: 19,
+                  fontSize: 18,
                   fontWeight: isActive ? 600 : 500,
-                  transform: `scale(${isActive ? 1.05 : 1})`,
-                  boxShadow: isActive ? '0 0 20px rgba(56, 189, 248, 0.35)' : undefined,
+                  transform: `scale(${isActive ? 1.04 : 1})`,
+                  boxShadow: isActive ? '0 4px 16px rgba(0, 0, 0, 0.12)' : undefined,
                 }}
               >
                 <span
@@ -141,14 +131,18 @@ export const Steps: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 700,
-                    background: isDone
-                      ? color.wechat
-                      : isActive
-                      ? color.brand
-                      : 'rgba(255, 255, 255, 0.12)',
-                    color: isDone || isActive ? '#000' : color.secondary,
+                    background: isActive
+                      ? color.solidInk
+                      : isDone
+                      ? color.solid
+                      : color.line,
+                    color: isActive
+                      ? color.solid
+                      : isDone
+                      ? color.solidInk
+                      : color.gray,
                   }}
                 >
                   {isDone ? '✓' : step.num}
@@ -182,10 +176,10 @@ export const Steps: React.FC = () => {
                 textAlign: 'center',
                 fontFamily: font.sans,
                 fontSize: 18,
-                color: '#cbd5e1',
+                color: color.ink,
                 opacity,
                 letterSpacing: '0.02em',
-                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                fontWeight: 500,
               }}
             >
               {step.note}

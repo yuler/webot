@@ -129,3 +129,13 @@ export async function fetchBotStatus() {
     hasQr?: boolean;
   }>(await apiFetch("/api/bot/status", { credentials: "include", cache: "no-store" }));
 }
+
+export async function resetBotSession() {
+  return parseJson<{
+    status: string;
+    message: string;
+    rev: string;
+    botReady?: boolean;
+    hasQr?: boolean;
+  }>(await apiFetch("/api/bot/reset", { method: "POST", credentials: "include" }));
+}

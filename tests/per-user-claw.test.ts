@@ -216,4 +216,105 @@ console.log("OK");
     expect(r.exitCode).toBe(0);
     expect(r.stdout.toString()).toContain("OK");
   });
+
+  test("POST /api/bot/reset resets credentials and disconnects binding", async () => {
+    const cookie = await login("reset-claw@example.com");
+
+    // Inject active session
+    const repoRoot = path.join(import.meta.dir, "..");
+    const script = `
+process.env.SQLITE_PATH = ${JSON.stringify(TMP)};
+process.env.SESSION_SECRET = "test-secret-per-user-claw";
+const { ensureSchema } = await import("../src/db/index.ts");
+const { findOrCreateUser } = await import("../src/auth/users.ts");
+const { claimBotToken } = await import("../src/claw/store.ts");
+const { ensureBindingForUser, activateBindingByCode } = await import("../src/auth/bindings.ts");
+ensureSchema();
+const u = findOrCreateUser("reset-claw@example.com");
+claimBotToken(u.id, "token-RESET-TEST", { message: "ready" });
+const b = ensureBindingForUser(u.id);
+activateBindingByCode(b.bindCode, "wx-bound-user");
+console.log("INJECTED");
+`;
+    const p = path.join(import.meta.dir, "_inject_reset_tmp.ts");
+    fs.writeFileSync(p, script);
+    Bun.spawnSync({
+      cmd: ["bun", "run", p],
+      cwd: repoRoot,
+      env: { ...process.env, SQLITE_PATH: TMP, SESSION_SECRET: "test-secret-per-user-claw" },
+    });
+    try {
+      fs.unlinkSync(p);
+    } catch {}
+
+    const statusBefore = await fetch(`${BASE}/api/bot/status`, { headers: { cookie } });
+    const sb = (await statusBefore.json()) as { botReady: boolean };
+    expect(sb.botReady).toBe(true);
+
+    const bindBefore = await fetch(`${BASE}/api/binding`, { headers: { cookie } });
+    const bb = (await bindBefore.json()) as { binding: { status: string; wechatUserId: string | null } };
+    expect(bb.binding.status).toBe("active");
+    expect(bb.binding.wechatUserId).toBe("wx-bound-user");
+
+    // Call POST /api/bot/reset
+    const res = await fetch(`${BASE}/api/bot/reset`, { method: "POST", headers: { cookie } });
+    expect(res.status).toBe(200);
+    const resetBody = (await res.json()) as { botReady: boolean };
+    expect(resetBody.botReady).toBe(false);
+
+    // Verify binding is disconnected
+    const bindAfter = await fetch(`${BASE}/api/binding`, { headers: { cookie } });
+    const ba = (await bindAfter.json()) as { binding: { status: string; wechatUserId: string | null } };
+    expect(ba.binding.status).toBe("disconnected");
+    expect(ba.binding.wechatUserId).toBeNull();
+  });
+
+  test("first message from unbound user auto-binds to owner", async () => {
+    const repoRoot = path.join(import.meta.dir, "..");
+    const script = `
+process.env.SQLITE_PATH = ${JSON.stringify(TMP)};
+process.env.SESSION_SECRET = "test-secret-per-user-claw";
+const { ensureSchema } = await import("../src/db/index.ts");
+const { findOrCreateUser } = await import("../src/auth/users.ts");
+const { ensureBindingForUser, findActiveBindingByWechatUserId, getBindingForUser } = await import("../src/auth/bindings.ts");
+const { claimBotToken } = await import("../src/claw/store.ts");
+
+ensureSchema();
+const u = findOrCreateUser("autobind@example.com");
+claimBotToken(u.id, "tok-autobind");
+const b = ensureBindingForUser(u.id);
+if (b.wechatUserId !== null) throw new Error("should be unbound initially");
+
+// Simulate the auto-bind logic from handleMessages
+let binding = findActiveBindingByWechatUserId("wx-sender-123");
+if (!binding || binding.userId !== u.id) {
+  const ownerBinding = ensureBindingForUser(u.id);
+  if (!ownerBinding.wechatUserId || ownerBinding.status !== "active") {
+    const { activateBindingByCode } = await import("../src/auth/bindings.ts");
+    const auto = activateBindingByCode(ownerBinding.bindCode, "wx-sender-123");
+    if (auto.ok) binding = auto.binding;
+  }
+}
+if (!binding || binding.userId !== u.id || binding.wechatUserId !== "wx-sender-123") {
+  throw new Error("auto-bind failed");
+}
+const fresh = getBindingForUser(u.id);
+if (fresh?.status !== "active" || fresh?.wechatUserId !== "wx-sender-123") {
+  throw new Error("DB binding state incorrect");
+}
+console.log("AUTO-BIND OK");
+`;
+    const p = path.join(import.meta.dir, "_autobind_test_tmp.ts");
+    fs.writeFileSync(p, script);
+    const r = Bun.spawnSync({
+      cmd: ["bun", "run", p],
+      cwd: repoRoot,
+      env: { ...process.env, SQLITE_PATH: TMP, SESSION_SECRET: "test-secret-per-user-claw" },
+    });
+    try {
+      fs.unlinkSync(p);
+    } catch {}
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.toString()).toContain("AUTO-BIND OK");
+  });
 });

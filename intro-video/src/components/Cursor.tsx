@@ -57,8 +57,8 @@ export const Cursor: React.FC<{
               width: radius * 2,
               height: radius * 2,
               borderRadius: 999,
-              border: `2.5px solid ${color.brand}`,
-              opacity: 1 - progress,
+              border: `2px solid ${color.ink}`,
+              opacity: (1 - progress) * 0.7,
               pointerEvents: 'none',
               zIndex: 999,
             }}
@@ -77,7 +77,7 @@ export const Cursor: React.FC<{
           top: y - 2,
           transform: `scale(${isClicking ? 0.85 : 1})`,
           transformOrigin: '0 0',
-          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))',
+          filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))',
           pointerEvents: 'none',
           zIndex: 1000,
           transition: 'transform 0.08s ease',
@@ -86,7 +86,7 @@ export const Cursor: React.FC<{
         <path
           d="M5 2.5 L19.5 13.2 L12.6 14.1 L16.4 21 L13.3 22.6 L9.6 15.6 L5 20.5 Z"
           fill="#ffffff"
-          stroke="#0f172a"
+          stroke="#000000"
           strokeWidth={1.5}
           strokeLinejoin="round"
         />

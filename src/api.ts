@@ -5,7 +5,13 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { lanAddresses } from "./lan";
-import { __testInjectQr, getQrPngForUser, getStatusForUser, publicBotView } from "./claw/runtime";
+import {
+  __testInjectQr,
+  getQrPngForUser,
+  getStatusForUser,
+  publicBotView,
+  resetUserClawWorker,
+} from "./claw/runtime";
 import { requestOtp, consumeOtp, consumeMagicToken } from "./auth/otp";
 import {
   SESSION_COOKIE,
@@ -163,6 +169,13 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
       if (pathname === "/api/bot/status" && req.method === "GET") {
         const user = requireUser(req);
         if (user instanceof Response) return user;
+        return json(getStatusForUser(user.id));
+      }
+
+      if (pathname === "/api/bot/reset" && req.method === "POST") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        resetUserClawWorker(user.id);
         return json(getStatusForUser(user.id));
       }
 

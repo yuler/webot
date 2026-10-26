@@ -1,4 +1,7 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import introCaptions from "@/assets/intro.vtt";
+import introPoster from "@/assets/intro-poster.jpg";
+import introVideo from "@/assets/intro.mp4";
 import { AppShell } from "@/components/AppShell";
 
 const rootRouteApi = getRouteApi("__root__");
@@ -73,17 +76,11 @@ function LandingPage() {
             controls
             playsInline
             preload="metadata"
-            poster="/intro-poster.jpg"
+            poster={introPoster}
             aria-label="WeBot 使用简介"
           >
-            <source src="/intro.mp4" type="video/mp4" />
-            <track
-              kind="captions"
-              src="/intro.vtt"
-              srcLang="zh"
-              label="中文字幕"
-              default
-            />
+            <source src={introVideo} type="video/mp4" />
+            <track kind="captions" src={introCaptions} srcLang="zh" label="中文字幕" default />
           </video>
           <figcaption className="type-meta">4 步上手演示（带中文字幕）</figcaption>
         </figure>

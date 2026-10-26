@@ -5,6 +5,8 @@
 import QRCode from "qrcode";
 import {
   activateBindingByCode,
+  disconnectBinding,
+  ensureBindingForUser,
   extractBindCodeFromText,
   findActiveBindingByWechatUserId,
   findBindingByCode,
@@ -259,7 +261,25 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       continue;
     }
 
-    const binding = findActiveBindingByWechatUserId(fromUser);
+    let binding = findActiveBindingByWechatUserId(fromUser);
+    if (!binding || binding.userId !== ownerUserId) {
+      // Auto-bind on first message if this bot's owner is currently unbound
+      const ownerBinding = ensureBindingForUser(ownerUserId);
+      if (!ownerBinding.wechatUserId || ownerBinding.status !== "active") {
+        const auto = activateBindingByCode(ownerBinding.bindCode, fromUser);
+        if (auto.ok) {
+          binding = auto.binding;
+          insertMessage({
+            userId: ownerUserId,
+            wechatUserId: fromUser,
+            role: "system",
+            content: `WeChat auto-bound on first message`,
+            wechatMessageId: msgId || null,
+          });
+        }
+      }
+    }
+
     if (!binding || binding.userId !== ownerUserId) {
       await ilink.sendMessage(
         botToken,
@@ -409,6 +429,18 @@ export function getStatusForUser(userId: string) {
 export function getQrPngForUser(userId: string): Buffer | null {
   ensureUserClawWorker(userId);
   return getQrPng(userId);
+}
+
+/** Reset credentials and reboot worker so user gets a fresh login QR. */
+export function resetUserClawWorker(userId: string): void {
+  disconnectBinding(userId);
+  clearClawCredentials(userId);
+  const w = workers.get(userId);
+  if (w) {
+    w.abort.abort();
+    workers.delete(userId);
+  }
+  ensureUserClawWorker(userId);
 }
 
 export { publicBotView, __testInjectQr } from "./store";

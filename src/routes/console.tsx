@@ -208,8 +208,8 @@ function ConsolePage() {
               <span className="panel-step type-kicker" aria-hidden="true">01</span>扫码上线
             </h2>
             <p className="type-meta mt-2">
-              首次使用须先扫码：微信 → 我 → 设置 → 插件 → ClawBot，扫描下方二维码并确认。
-              ClawBot 已上线后，可跳过扫码，直接用绑定码重新关联微信。
+              微信 → 我 → 设置 → 插件 → ClawBot，扫描下方二维码并确认登录。
+              ClawBot 已上线后，在微信中直接发消息即可自动关联对话；若需切换微信号，可随时点击下方重新扫码。
             </p>
             <ClawQr />
           </section>
@@ -221,7 +221,7 @@ function ConsolePage() {
             <p className="type-meta mt-2">
               {isBound
                 ? "已绑定。若要换微信号或重新关联，复制下方命令发到微信 ClawBot 即可重绑。"
-                : "扫码上线后，把下面命令复制到微信发给 ClawBot，即可把私聊关联到本账号（首次绑定必经扫码上线）。"}
+                : "扫码上线后，在微信中直接给 ClawBot 发送任意消息即可自动绑定并开始对话；也可发送下方命令手动绑定。"}
             </p>
             <div className="bind-cmd">
               <button

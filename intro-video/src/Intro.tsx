@@ -78,7 +78,7 @@ export const Intro: React.FC = () => {
   const { cx, cy, zoom } = getCamera(frame);
 
   // Background subtle drift
-  const drift = Math.sin(frame / 180) * 40;
+  const drift = Math.sin(frame / 180) * 30;
 
   // Outro card animation (Frame >= 750)
   const outroShow = interpolate(frame, [755, 785], [0, 1], {
@@ -93,7 +93,7 @@ export const Intro: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: color.bg, overflow: 'hidden' }}>
-      {/* Ambient Animated Glows */}
+      {/* Ambient subtle light wash */}
       <div
         style={{
           position: 'absolute',
@@ -102,7 +102,7 @@ export const Intro: React.FC = () => {
           left: 100 + drift,
           top: -700,
           borderRadius: 999,
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 70%)',
+          background: 'radial-gradient(circle, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0) 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -114,7 +114,7 @@ export const Intro: React.FC = () => {
           right: -300 - drift,
           bottom: -600,
           borderRadius: 999,
-          background: 'radial-gradient(circle, rgba(7, 193, 96, 0.09) 0%, rgba(7, 193, 96, 0) 70%)',
+          background: 'radial-gradient(circle, rgba(7, 193, 96, 0.03) 0%, rgba(7, 193, 96, 0) 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -123,9 +123,9 @@ export const Intro: React.FC = () => {
       <AbsoluteFill
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px)',
+            'linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px)',
           backgroundSize: '80px 80px',
-          maskImage: 'radial-gradient(ellipse at 50% 50%, black 25%, transparent 80%)',
+          maskImage: 'radial-gradient(ellipse at 50% 50%, black 35%, transparent 85%)',
           pointerEvents: 'none',
         }}
       />
@@ -182,7 +182,7 @@ export const Intro: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: `rgba(9, 13, 20, ${0.72 * outroShow})`,
+            background: `rgba(255, 255, 255, ${0.88 * outroShow})`,
             backdropFilter: `blur(${16 * outroShow}px)`,
             zIndex: 80,
             opacity: outroShow,
@@ -195,23 +195,23 @@ export const Intro: React.FC = () => {
               alignItems: 'center',
               textAlign: 'center',
               padding: '48px 64px',
-              borderRadius: 24,
-              background: 'rgba(19, 24, 34, 0.88)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: '0 30px 80px rgba(0, 0, 0, 0.7)',
+              borderRadius: 0,
+              background: color.ground,
+              border: `1px solid ${color.line}`,
+              boxShadow: '0 24px 64px rgba(0, 0, 0, 0.1)',
               transform: `scale(${0.9 + 0.1 * outroSpring})`,
             }}
           >
             <div style={{ marginBottom: 20 }}>
-              <LogoMark size={72} color="#38bdf8" delay={755} />
+              <LogoMark size={72} color={color.ink} ground={color.ground} delay={755} />
             </div>
 
             <h1
               style={{
                 fontFamily: font.sans,
                 fontSize: 44,
-                fontWeight: 800,
-                color: '#ffffff',
+                fontWeight: 700,
+                color: color.ink,
                 margin: '0 0 12px 0',
                 letterSpacing: '0.03em',
               }}
@@ -223,9 +223,9 @@ export const Intro: React.FC = () => {
               style={{
                 fontFamily: font.sans,
                 fontSize: 22,
-                color: '#94a3b8',
+                color: color.gray,
                 margin: '0 0 28px 0',
-                fontWeight: 500,
+                fontWeight: 400,
               }}
             >
               微信里的 AI 助手 · DeepSeek 深度赋能
@@ -237,10 +237,10 @@ export const Intro: React.FC = () => {
                 alignItems: 'center',
                 gap: 10,
                 padding: '12px 28px',
-                borderRadius: 99,
-                background: 'rgba(56, 189, 248, 0.15)',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
-                color: '#38bdf8',
+                borderRadius: 0,
+                background: color.solid,
+                border: `1px solid ${color.solid}`,
+                color: color.solidInk,
                 fontFamily: font.mono,
                 fontSize: 18,
                 fontWeight: 600,

@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { fetchBotStatus } from "@/lib/api";
+import { fetchBotStatus, resetBotSession } from "@/lib/api";
 
 export const BOT_STATUS_KEY = ["bot-status"] as const;
 
@@ -17,9 +17,18 @@ export function useBotStatus() {
  * Status + PNG come from authenticated /api/bot/* (isolated by SaaS userId).
  */
 export function ClawQr() {
+  const qc = useQueryClient();
   const [rev, setRev] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const statusQ = useBotStatus();
+
+  const resetM = useMutation({
+    mutationFn: resetBotSession,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: BOT_STATUS_KEY });
+      qc.invalidateQueries({ queryKey: ["binding"] });
+    },
+  });
 
   useEffect(() => {
     const data = statusQ.data;
@@ -43,7 +52,7 @@ export function ClawQr() {
 
   let hint = data?.message || "加载中…";
   if (botReady) {
-    hint = data?.message || "ClawBot 已上线，可直接用下方绑定码关联微信";
+    hint = data?.message || "ClawBot 已上线，在微信中直接发消息即可自动关联对话";
   } else if (statusQ.isError) {
     hint = "无法获取扫码状态，请稍后刷新";
   } else if (imgFailed) {
@@ -59,6 +68,27 @@ export function ClawQr() {
       {botReady ? (
         <div className="qr-ready">
           <span className="status-dot is-on">ClawBot 已上线</span>
+          <button
+            type="button"
+            className={`btn-ghost mt-3${resetM.isPending ? " is-loading" : ""}`}
+            disabled={resetM.isPending}
+            onClick={() => {
+              if (
+                window.confirm("确认重新扫码？当前在线的 ClawBot 将断开，并生成新的登录二维码。")
+              ) {
+                resetM.mutate();
+              }
+            }}
+          >
+            {resetM.isPending ? (
+              <>
+                <span className="btn-spinner" aria-hidden="true" />
+                正在重置…
+              </>
+            ) : (
+              "重新扫码 / 更换微信"
+            )}
+          </button>
         </div>
       ) : showQr ? (
         <>
@@ -89,6 +119,12 @@ export function ClawQr() {
         <button type="button" className="btn-ghost" onClick={() => window.location.reload()}>
           刷新页面
         </button>
+      ) : null}
+      {resetM.isError ? (
+        <p className="notice notice--error mt-2" role="alert">
+          <span className="notice-tag">出错</span>
+          <span>重置失败，请稍后重试</span>
+        </p>
       ) : null}
     </div>
   );

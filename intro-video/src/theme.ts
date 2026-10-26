@@ -6,28 +6,40 @@ export const TOTAL_FRAMES = 855; // 28.5 seconds at 30 fps
 export const sec = (s: number) => Math.round(s * FPS);
 
 export const font = {
-  sans: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
+  sans: '"Noto Sans CJK SC", "Source Han Sans SC", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   mono: '"JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace',
 };
 
+// Design tokens — DESIGN.md (Light mode / 白)
 export const color = {
-  bg: '#0a0d14',
-  bgGradient: 'radial-gradient(circle at 50% 25%, #151d2d 0%, #0a0d14 100%)',
-  cardBg: '#131822',
-  cardHeader: '#1a2230',
-  border: 'rgba(255, 255, 255, 0.12)',
-  borderActive: 'rgba(56, 189, 248, 0.5)',
-  
-  text: '#f1f5f9',
-  secondary: '#94a3b8',
-  muted: '#64748b',
-  
-  brand: '#38bdf8', // Cyan / tech accent
-  wechat: '#07c160', // WeChat Green
-  wechatBubble: '#059648',
-  botBubble: '#1e293b',
-  
-  accent: '#38bdf8',
-  danger: '#ef4444',
-  warning: '#f59e0b',
+  // Core Tokens from DESIGN.md
+  ground: '#ffffff',
+  ink: '#000000',
+  gray: '#888888',
+  line: '#e5e5e5',
+  wash: '#f2f2f2',
+  solid: '#000000',
+  solidInk: '#ffffff',
+
+  // Canvas / Scene
+  bg: '#f8f9fa',
+  bgGrid: 'rgba(0, 0, 0, 0.04)',
+  cardBg: '#ffffff',
+  cardHeader: '#f7f8f9',
+  border: '#e5e5e5',
+  borderActive: '#000000',
+
+  // WeChat & Device Mockups
+  wechat: '#07c160',
+  wechatBubble: '#95ec69',
+  phoneBg: '#ededed',
+  phoneHeader: '#f7f7f7',
+  phoneBorder: '#d1d5db',
+
+  // Typography & Semantics
+  text: '#000000',
+  secondary: '#888888',
+  muted: '#888888',
+  brand: '#000000',
+  accent: '#000000',
 };

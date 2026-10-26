@@ -231,7 +231,7 @@ describe("MVP API", () => {
     expect(guestHtml).not.toContain(">WEBOT<");
     expect(guestHtml).not.toContain(">weBOT<");
     expect(guestHtml).toContain(">WeBot<");
-    expect(guestHtml).toContain('src="/intro.mp4"');
+    expect(guestHtml).toMatch(/src="\/assets\/intro-[A-Za-z0-9_-]+\.mp4"/);
     expect(guestHtml).toContain("WeBot 使用简介");
     // Guest CTAs go to /login; no console entry link on the landing.
     expect(guestHtml).not.toContain('href="/console"');
