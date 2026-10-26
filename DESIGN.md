@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边 SVG logo（`LogoMark`，微信图标 + 右上角 AI 角标）+ `WeBot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.cc/
+> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边 SVG logo（`LogoMark`，微信图标 + 右上角 AI 角标）+ `WeBot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。本文件自 [yuler/k41 DESIGN.md](https://github.com/yuler/k41/blob/main/DESIGN.md) 拷贝，类型角色按控制台体量裁剪（不用 SmokeStat 等大号数字）。生产站点：https://webot.yuler.dev/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 

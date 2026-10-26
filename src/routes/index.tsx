@@ -121,8 +121,8 @@ function LandingPage() {
 
       <footer className="landing-footer type-meta">
         登录只要邮箱魔法链接；扫码与绑定都在控制台。生产站{" "}
-        <a href="https://webot.yuler.cc/" className="link text-ink">
-          webot.yuler.cc
+        <a href="https://webot.yuler.dev/" className="link text-ink">
+          webot.yuler.dev
         </a>
         。
       </footer>

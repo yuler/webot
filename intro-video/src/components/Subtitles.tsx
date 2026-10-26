@@ -70,7 +70,7 @@ export const SUBTITLES: SubtitleItem[] = [
     end: 855,
     tag: 'WeBot',
     tagColor: color.brand,
-    text: '微信里的 AI 助手 · 极简配置 · webot.yuler.cc',
+    text: '微信里的 AI 助手 · 极简配置 · webot.yuler.dev',
   },
 ];
 

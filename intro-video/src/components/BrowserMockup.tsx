@@ -15,7 +15,7 @@ export const BrowserMockup: React.FC<{
 
   // Phase transition: Frame 180 transitions from /login to /console
   const isConsole = frame >= 180;
-  const addressUrl = isConsole ? 'webot.yuler.cc/console' : 'webot.yuler.cc/login';
+  const addressUrl = isConsole ? 'webot.yuler.dev/console' : 'webot.yuler.dev/login';
 
   // Step 1: Email typing animation (Frame 20 - 65)
   const fullEmail = 'yule@example.com';
