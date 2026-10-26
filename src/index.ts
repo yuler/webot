@@ -8,8 +8,10 @@ import { loadHomeEnv, printBanner } from "./bot";
 import { startClawRuntime } from "./claw/runtime";
 import { startApiServer } from "./api";
 import { mailTransport } from "./mail";
+import { assertProductionSecrets } from "./auth/secrets";
 
 loadHomeEnv();
+assertProductionSecrets();
 ensureSchema();
 console.log(`[DB] SQLite (Drizzle) at ${dbPath}`);
 console.log(
