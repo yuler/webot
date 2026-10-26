@@ -452,6 +452,23 @@
   color: var(--color-ink);
 }
 
+.landing-intro {
+  border: 1px solid var(--color-line);
+  background: var(--color-wash);
+  padding: 0;
+  overflow: hidden;
+}
+
+.landing-intro-video {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 0 auto;
+  background: #000;
+  vertical-align: middle;
+}
+
 .landing-list {
   list-style: none;
   margin: 0;
