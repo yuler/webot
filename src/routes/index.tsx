@@ -7,6 +7,8 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+const POINTS = ["不用装 App，微信里直接聊", "邮箱魔法链接一键登录", "对话记录在控制台随时回看"] as const;
+
 const STEPS = [
   {
     n: "01",
@@ -31,46 +33,54 @@ function LandingPage() {
 
   return (
     <AppShell size="lg">
-      <section className="landing-hero">
-        <h1 className="type-title">微信里的 AI 助手</h1>
-        <p className="type-meta mt-3 max-w-xl">
-          用邮箱魔法链接登录，在控制台扫码并复制绑定命令，即可在微信里和 DeepSeek
-          对话。
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {loggedIn ? (
-            <Link to="/console" className="btn-solid">
-              控制台
-            </Link>
-          ) : (
-            <Link to="/login" className="btn-solid">
-              登录
-            </Link>
-          )}
+      <section className="landing-hero" aria-labelledby="hero-heading">
+        <div className="landing-hero-copy">
+          <p className="type-kicker text-gray">WECHAT × DEEPSEEK</p>
+          <h1 id="hero-heading" className="type-title">
+            微信里的 AI 助手
+          </h1>
+          <p className="type-meta max-w-xl">
+            用邮箱魔法链接登录，在控制台扫码并复制绑定命令，即可在微信里和 DeepSeek 对话。
+          </p>
+          <ul className="landing-points type-meta">
+            {POINTS.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+          <div className="actions">
+            {loggedIn ? (
+              <Link to="/console" className="btn-solid">
+                进入控制台
+              </Link>
+            ) : (
+              <Link to="/login" className="btn-solid">
+                用邮箱开始
+              </Link>
+            )}
+            <a href="#how" className="btn-ghost">
+              怎么用
+            </a>
+          </div>
         </div>
+
+        <figure className="landing-video m-0">
+          <video controls playsInline preload="metadata" aria-label="WeBot 使用简介">
+            <source src="/intro.mp4" type="video/mp4" />
+          </video>
+          <figcaption className="type-meta">使用演示</figcaption>
+        </figure>
       </section>
 
-      <section className="panel mt-8" aria-labelledby="how-heading">
+      <section id="how" className="panel" aria-labelledby="how-heading">
         <h2 id="how-heading" className="type-app-title">
           怎么用
         </h2>
-        <div className="landing-intro mt-4">
-          <video
-            className="landing-intro-video"
-            controls
-            playsInline
-            preload="metadata"
-            aria-label="weBOT 使用简介"
-          >
-            <source src="/intro.mp4" type="video/mp4" />
-          </video>
-        </div>
-        <ol className="landing-list mt-4">
+        <ol className="landing-steps">
           {STEPS.map((s) => (
-            <li key={s.n} className="landing-list-item">
-              <span className="type-kicker text-ink">{s.n}</span>
+            <li key={s.n} className="landing-step">
+              <span className="type-kicker text-ink tabular">{s.n}</span>
               <div>
-                <h3 className="type-meta text-ink" style={{ fontWeight: 500 }}>
+                <h3 className="text-strong" style={{ fontSize: 15 }}>
                   {s.title}
                 </h3>
                 <p className="type-meta mt-1">{s.body}</p>
@@ -78,22 +88,22 @@ function LandingPage() {
             </li>
           ))}
         </ol>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="actions mt-6">
           {loggedIn ? (
-            <Link to="/console" className="btn-solid">
+            <Link to="/console" className="btn-solid btn-block">
               去控制台扫码 / 绑定
             </Link>
           ) : (
-            <Link to="/login" className="btn-solid">
+            <Link to="/login" className="btn-solid btn-block">
               先登录
             </Link>
           )}
         </div>
       </section>
 
-      <footer className="panel type-meta">
+      <footer className="landing-footer type-meta">
         登录只要邮箱魔法链接；扫码与绑定都在控制台。生产站{" "}
-        <a href="https://webot.yuler.cc/" className="text-ink">
+        <a href="https://webot.yuler.cc/" className="link text-ink">
           webot.yuler.cc
         </a>
         。

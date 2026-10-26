@@ -1,23 +1,22 @@
 import { useState } from "react";
 
-/** Stroke paths for a geometric "W" monogram (K41-style bevel strokes). */
+/**
+ * WeBot mark: square robot head (antenna + eyes) drawn as the large
+ * WeChat bubble, with the smaller bubble at the upper right.
+ * Right angles only, currentColor, strokes draw in on mount and hover.
+ */
 const STROKES = [
-  { d: "M10 14L18 50", width: 6, delay: 0 },
-  { d: "M18 50L32 22", width: 6, delay: 0.12 },
-  { d: "M32 22L46 50", width: 6, delay: 0.24 },
-  { d: "M46 50L54 14", width: 6, delay: 0.36 },
-  // small "BOT" underline ticks — echo ClawBot without spelling a second brand
-  { d: "M22 56H42", width: 3.5, delay: 0.5 },
+  { d: "M17 2H27V11H17Z", width: 3.5, delay: 0 },
+  { d: "M22 11V18", width: 3.5, delay: 0.08 },
+  { d: "M4 18H40V44H20V56H8V44H4Z", width: 3.5, delay: 0.16 },
+  { d: "M44 4H60V18H52V28H44Z", width: 3.5, delay: 0.32 },
 ];
 
-/**
- * weBOT logo mark: geometric "W" drawn with strokes only (no fonts),
- * painted with `currentColor` so it follows light/dark ink.
- * Strokes draw in on mount and again on hover (same pattern as yuler/k41 LogoMark).
- */
+const EYES = ["M12 28H19V35H12Z", "M26 28H33V35H26Z"];
+
 export function LogoMark({
   className,
-  title = "weBOT",
+  title = "WeBot",
 }: {
   className?: string;
   title?: string;
@@ -39,7 +38,7 @@ export function LogoMark({
         fill="none"
         stroke="currentColor"
         strokeLinecap="square"
-        strokeLinejoin="bevel"
+        strokeLinejoin="miter"
       >
         {STROKES.map((s) => (
           <path
@@ -49,6 +48,9 @@ export function LogoMark({
             pathLength={1}
             style={{ animationDelay: `${s.delay}s` }}
           />
+        ))}
+        {EYES.map((d) => (
+          <path key={d} d={d} fill="currentColor" stroke="none" />
         ))}
       </g>
     </svg>
