@@ -47,6 +47,17 @@ async function readJson(req: Request): Promise<any> {
   }
 }
 
+/** Best-effort client IP for OTP verify lockout (behind reverse proxy). */
+function clientIp(req: Request): string | undefined {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const real = req.headers.get("x-real-ip")?.trim();
+  return real || undefined;
+}
+
 function requireUser(req: Request): SessionUser | Response {
   const user = userFromRequest(req);
   if (!user) return json({ error: "unauthorized" }, 401);
@@ -205,8 +216,19 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
 
       if (pathname === "/api/auth/verify-otp" && req.method === "POST") {
         const body = await readJson(req);
-        const consumed = consumeOtp(String(body?.email || ""), String(body?.code || ""));
-        if (!consumed.ok) return json({ error: consumed.error }, 400);
+        const consumed = consumeOtp(String(body?.email || ""), String(body?.code || ""), {
+          ip: clientIp(req),
+        });
+        if (!consumed.ok) {
+          if (consumed.retryAfterSec != null) {
+            return json(
+              { error: consumed.error, retryAfterSec: consumed.retryAfterSec },
+              429,
+              { "Retry-After": String(consumed.retryAfterSec) },
+            );
+          }
+          return json({ error: consumed.error }, 400);
+        }
         const issued = issueSession(consumed.email);
         return json(issued.body, 200, issued.headers);
       }

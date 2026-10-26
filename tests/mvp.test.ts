@@ -319,6 +319,34 @@ describe("MVP API", () => {
     expect(statuses).toContain(429);
   });
 
+  test("OTP verify lockout after repeated failures", async () => {
+    const email = "verify-lockout@example.com";
+    await fetch(`${BASE}/api/auth/request-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const statuses: number[] = [];
+    let locked = false;
+    for (let i = 0; i < 8; i++) {
+      const res = await fetch(`${BASE}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, code: "12345" }),
+      });
+      statuses.push(res.status);
+      if (res.status === 429) {
+        const body = (await res.json()) as { retryAfterSec?: number };
+        expect(body.retryAfterSec).toBeGreaterThan(0);
+        locked = true;
+        break;
+      }
+    }
+    expect(statuses.some((s) => s === 400)).toBe(true);
+    expect(locked).toBe(true);
+  });
+
   test("bind code reset changes code and clears wechat link", async () => {
     const { cookie, bindCode } = (globalThis as any).__mvp as {
       cookie: string;

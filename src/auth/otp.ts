@@ -19,6 +19,90 @@ const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_LONG_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_LONG = 10;
 
+/** Failed OTP verifies before lockout (per email and optional IP). */
+const VERIFY_MAX_FAILURES = 5;
+/** Lockout window after too many failed verifies. */
+const VERIFY_LOCKOUT_MS = 15 * 60 * 1000;
+
+type VerifyLockState = { failures: number; lockedUntil: number };
+/** In-process verify failure / lockout state (keyed email:… or ip:…). */
+const verifyLocks = new Map<string, VerifyLockState>();
+
+export type ConsumeOtpResult =
+  | { ok: true; email: string }
+  | { ok: false; error: string; retryAfterSec?: number };
+
+function lockKeys(email: string, ip?: string): string[] {
+  const keys = [`email:${email}`];
+  if (ip && ip.length > 0) keys.push(`ip:${ip}`);
+  return keys;
+}
+
+function checkVerifyLock(email: string, ip?: string): ConsumeOtpResult | null {
+  const now = Date.now();
+  let worstRetry = 0;
+  for (const key of lockKeys(email, ip)) {
+    const state = verifyLocks.get(key);
+    if (!state) continue;
+    if (state.lockedUntil > now) {
+      worstRetry = Math.max(worstRetry, Math.ceil((state.lockedUntil - now) / 1000));
+    }
+  }
+  if (worstRetry > 0) {
+    return {
+      ok: false,
+      error: "Too many failed attempts. Try again later.",
+      retryAfterSec: worstRetry,
+    };
+  }
+  return null;
+}
+
+function recordVerifyFailure(email: string, ip?: string): ConsumeOtpResult | null {
+  const now = Date.now();
+  let lockedRetry = 0;
+  for (const key of lockKeys(email, ip)) {
+    let state = verifyLocks.get(key);
+    if (!state) {
+      state = { failures: 0, lockedUntil: 0 };
+    } else if (state.lockedUntil > 0 && state.lockedUntil <= now) {
+      // Previous lockout expired — start a fresh failure window.
+      state = { failures: 0, lockedUntil: 0 };
+    }
+    if (state.lockedUntil > now) {
+      lockedRetry = Math.max(lockedRetry, Math.ceil((state.lockedUntil - now) / 1000));
+      verifyLocks.set(key, state);
+      continue;
+    }
+    state.failures += 1;
+    if (state.failures >= VERIFY_MAX_FAILURES) {
+      state.lockedUntil = now + VERIFY_LOCKOUT_MS;
+      state.failures = 0;
+      lockedRetry = Math.max(lockedRetry, Math.ceil(VERIFY_LOCKOUT_MS / 1000));
+    }
+    verifyLocks.set(key, state);
+  }
+  if (lockedRetry > 0) {
+    return {
+      ok: false,
+      error: "Too many failed attempts. Try again later.",
+      retryAfterSec: lockedRetry,
+    };
+  }
+  return null;
+}
+
+function clearVerifyLock(email: string, ip?: string): void {
+  for (const key of lockKeys(email, ip)) {
+    verifyLocks.delete(key);
+  }
+}
+
+/** Test helper: clear in-memory verify lockouts. */
+export function __resetVerifyLocksForTests(): void {
+  verifyLocks.clear();
+}
+
 export type RequestLoginResult =
   | { ok: true }
   | { ok: false; error: string; retryAfterSec?: number };
@@ -142,13 +226,20 @@ export async function requestOtp(rawEmail: string): Promise<RequestLoginResult> 
 export function consumeOtp(
   rawEmail: string,
   code: string,
-): { ok: true; email: string } | { ok: false; error: string } {
+  opts?: { ip?: string },
+): ConsumeOtpResult {
   const email = normalizeEmail(rawEmail);
   if (!isValidEmail(email)) {
     return { ok: false, error: "Invalid email address" };
   }
+
+  const locked = checkVerifyLock(email, opts?.ip);
+  if (locked) return locked;
+
   const trimmed = code.trim();
   if (!/^\d{6}$/.test(trimmed)) {
+    const after = recordVerifyFailure(email, opts?.ip);
+    if (after) return after;
     return { ok: false, error: "Invalid code" };
   }
 
@@ -171,6 +262,8 @@ export function consumeOtp(
   const codeHash = hashSecret(trimmed);
   const match = rows.find((r) => r.codeHash === codeHash);
   if (!match) {
+    const after = recordVerifyFailure(email, opts?.ip);
+    if (after) return after;
     return { ok: false, error: "Invalid or expired code" };
   }
 
@@ -181,6 +274,7 @@ export function consumeOtp(
 
   // Invalidate sibling otp + magic challenges for this email
   invalidateUnusedChallenges(email, match.id);
+  clearVerifyLock(email, opts?.ip);
 
   return { ok: true, email };
 }

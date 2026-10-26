@@ -11,8 +11,9 @@ Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + 
 - `users` + `sessions` + `otp_codes` — 邮箱魔法链接登录（OTP 备选）
 - `wechat_bindings` — 每人一个绑定码；向 ClawBot 发送绑定码（或 `/bind CODE`）后 `active`；可重置码 / 断开
 - `messages` — 绑定后的对话历史，控制台可看；清空 / 微信 `/reset` 为软删除（`deleted_at`）
+- `claw_bot_sessions` — 每用户独立 ClawBot 凭据（`bot_token` / QR / getupdates）
 
-**没有** multi-tenant / 短信 / 微信 OAuth / WebAuthn。
+**没有** 短信 / 微信 OAuth / WebAuthn。
 
 ## 快速开始
 
@@ -62,6 +63,8 @@ WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy �
 - 扫码在控制台 `/console`：每位登录用户各自申请二维码、各自存 `bot_token`、各自长轮询  
 - 手机：微信 → 我 → 设置 → 插件 → ClawBot 扫码（一个微信号同时只能独占一个 Bot）  
 - 绑定后发消息会写入 `messages`；未绑定会提示发绑定码；控制台或微信 `/reset` 软删除历史  
+
+> **迁移（#11）：** 若你曾用过早期「全局共享」ClawBot，请在控制台重新扫码上线，并视为已轮换 `bot_token`（旧全局会话不再有效）。
 
 ## 测试
 

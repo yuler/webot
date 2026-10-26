@@ -1,6 +1,7 @@
 import { and, eq, gt } from "drizzle-orm";
 import { db, schema } from "../db";
 import { hashSecret, newId, nowIso, randomToken } from "./crypto";
+import { isProductionRuntime } from "./secrets";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const SESSION_COOKIE = "webot_session";
@@ -10,8 +11,9 @@ export type SessionUser = {
   email: string;
 };
 
+/** Production always Secure; local may opt in via COOKIE_SECURE=1. */
 function cookieSecure(): boolean {
-  return process.env.COOKIE_SECURE === "1" || process.env.NODE_ENV === "production";
+  return process.env.COOKIE_SECURE === "1" || isProductionRuntime();
 }
 
 export function createSession(userId: string): { token: string; expiresAt: string } {
