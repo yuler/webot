@@ -19,12 +19,12 @@ const CAMERA_TRACK: [number, number, number, number][] = [
   [340, 680, 530, 1.32],
   // Camera scroll / pan across from Browser to Phone!
   [370, 750, 530, 1.25],
-  [410, 1445, 540, 1.26],
+  [410, 1445, 500, 1.2],
   // Step 3: WeChat bind
-  [520, 1445, 540, 1.26],
+  [520, 1445, 500, 1.2],
   // Step 4: Zoom into WeChat chat
-  [560, 1445, 570, 1.35],
-  [730, 1445, 570, 1.35],
+  [560, 1445, 520, 1.22],
+  [730, 1445, 520, 1.22],
   // Outro: Camera pulls back to reveal the whole scene
   [770, 960, 540, 0.94],
   [TOTAL_FRAMES, 960, 540, 0.94],
@@ -202,8 +202,18 @@ export const Intro: React.FC = () => {
               transform: `scale(${0.9 + 0.1 * outroSpring})`,
             }}
           >
-            <div style={{ marginBottom: 20 }}>
-              <LogoMark size={72} color={color.ink} ground={color.ground} delay={755} />
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 8,
+                border: `1px solid ${color.line}`,
+                background: color.ground,
+                marginBottom: 20,
+              }}
+            >
+              <LogoMark size={64} color={color.ink} ground={color.ground} delay={755} />
             </div>
 
             <h1

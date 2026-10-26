@@ -132,14 +132,32 @@ export const BrowserMockup: React.FC<{
           >
             {/* Header Brand */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-              <LogoMark size={32} color={color.ink} ground={color.ground} />
-              <span style={{ fontSize: 24, fontWeight: 600, color: color.ink, letterSpacing: '0.02em' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 4,
+                  border: `1px solid ${color.line}`,
+                  background: color.ground,
+                }}
+              >
+                <LogoMark size={28} color={color.ink} ground={color.ground} />
+              </span>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: color.ink,
+                  letterSpacing: '0.18em',
+                }}
+              >
                 WeBot
               </span>
               <span
                 style={{
                   fontSize: 12,
-                  fontWeight: 500,
+                  fontWeight: 400,
                   padding: '3px 8px',
                   borderRadius: 0,
                   background: color.wash,
@@ -264,9 +282,24 @@ export const BrowserMockup: React.FC<{
           >
             {/* Top Bar inside Console */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <LogoMark size={28} color={color.ink} ground={color.ground} />
-                <span style={{ fontSize: 20, fontWeight: 600, color: color.ink }}>控制台</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 3,
+                    border: `1px solid ${color.line}`,
+                    background: color.ground,
+                  }}
+                >
+                  <LogoMark size={24} color={color.ink} ground={color.ground} />
+                </span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: color.ink, letterSpacing: '0.18em' }}>
+                  WeBot
+                </span>
+                <span style={{ color: color.line }}>/</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: color.ink }}>控制台</span>
                 <span style={{ color: color.line }}>/</span>
                 <span style={{ fontSize: 14, color: color.gray }}>yule@example.com</span>
               </div>

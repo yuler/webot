@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 import { color, font } from '../theme';
 
 export interface StepDef {
@@ -43,7 +43,6 @@ export const STEPS: StepDef[] = [
 
 export const Steps: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   // Find active step index
   const activeIndex = STEPS.findIndex(
@@ -55,14 +54,15 @@ export const Steps: React.FC = () => {
     <div
       style={{
         position: 'absolute',
-        top: 36,
+        top: 24,
         left: 0,
         right: 0,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 14,
+        gap: 10,
         zIndex: 50,
+        pointerEvents: 'none',
       }}
     >
       {/* Pills Container */}
@@ -71,7 +71,7 @@ export const Steps: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'rgba(255, 255, 255, 0.96)',
           padding: '8px 18px',
           borderRadius: 999,
           border: `1px solid ${color.line}`,
@@ -100,8 +100,8 @@ export const Steps: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
-                  height: 44,
-                  padding: '0 18px 0 8px',
+                  height: 42,
+                  padding: '0 16px 0 8px',
                   borderRadius: 999,
                   background: isActive
                     ? color.solid
@@ -117,7 +117,7 @@ export const Steps: React.FC = () => {
                   }`,
                   color: isActive ? color.solidInk : isDone ? color.ink : color.gray,
                   fontFamily: font.sans,
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: isActive ? 600 : 500,
                   transform: `scale(${isActive ? 1.04 : 1})`,
                   boxShadow: isActive ? '0 4px 16px rgba(0, 0, 0, 0.12)' : undefined,
@@ -125,13 +125,13 @@ export const Steps: React.FC = () => {
               >
                 <span
                   style={{
-                    width: 30,
-                    height: 30,
+                    width: 28,
+                    height: 28,
                     borderRadius: 999,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: 700,
                     background: isActive
                       ? color.solidInk
@@ -154,8 +154,8 @@ export const Steps: React.FC = () => {
         })}
       </div>
 
-      {/* Sub-note */}
-      <div style={{ position: 'relative', height: 28, width: 800 }}>
+      {/* Sub-note Pill */}
+      <div style={{ position: 'relative', height: 26, width: 800, display: 'flex', justifyContent: 'center' }}>
         {STEPS.map((step, i) => {
           const isCurrent = i === currentStep;
           const opacity = interpolate(
@@ -172,14 +172,19 @@ export const Steps: React.FC = () => {
               key={step.num}
               style={{
                 position: 'absolute',
-                inset: 0,
-                textAlign: 'center',
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 14px',
+                background: 'rgba(255, 255, 255, 0.92)',
+                border: `1px solid ${color.line}`,
+                borderRadius: 999,
                 fontFamily: font.sans,
-                fontSize: 18,
+                fontSize: 14,
                 color: color.ink,
                 opacity,
                 letterSpacing: '0.02em',
                 fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
               }}
             >
               {step.note}
