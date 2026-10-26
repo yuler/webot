@@ -9,7 +9,7 @@ export const PhoneMockup: React.FC<{
   width?: number;
   height?: number;
   style?: React.CSSProperties;
-}> = ({ x, y, width = 450, height = 760, style }) => {
+}> = ({ x, y, width = 390, height = 760, style }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -346,13 +346,13 @@ export const PhoneMockup: React.FC<{
           >
             <div
               style={{
-                maxWidth: 290,
+                maxWidth: 260,
                 background: color.wechatBubble,
                 color: color.ink,
                 borderRadius: 6,
                 border: '1px solid #7ecc50',
-                padding: '9px 14px',
-                fontSize: 13,
+                padding: '8px 12px',
+                fontSize: 12.5,
                 lineHeight: 1.4,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
               }}
@@ -367,7 +367,7 @@ export const PhoneMockup: React.FC<{
           <div
             style={{
               display: 'flex',
-              gap: 10,
+              gap: 8,
               alignItems: 'flex-start',
               opacity: botResponseSpring,
               transform: `translateY(${(1 - botResponseSpring) * 12}px)`,
@@ -375,8 +375,8 @@ export const PhoneMockup: React.FC<{
           >
             <div
               style={{
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 borderRadius: 4,
                 background: color.ground,
                 border: `1px solid ${color.line}`,
@@ -386,18 +386,18 @@ export const PhoneMockup: React.FC<{
                 flexShrink: 0,
               }}
             >
-              <LogoMark size={22} color={color.ink} ground={color.ground} />
+              <LogoMark size={20} color={color.ink} ground={color.ground} />
             </div>
             <div
               style={{
-                maxWidth: 310,
+                maxWidth: 285,
                 background: color.ground,
                 border: `1px solid #dedede`,
                 borderRadius: 6,
-                padding: '10px 14px',
-                fontSize: 12,
+                padding: '9px 12px',
+                fontSize: 11.5,
                 color: color.ink,
-                lineHeight: 1.45,
+                lineHeight: 1.4,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
               }}
             >
@@ -410,10 +410,10 @@ export const PhoneMockup: React.FC<{
                   background: color.wash,
                   border: `1px solid ${color.line}`,
                   borderRadius: 4,
-                  padding: '8px 10px',
-                  margin: '6px 0',
+                  padding: '6px 8px',
+                  margin: '5px 0',
                   fontFamily: font.mono,
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: color.ink,
                   lineHeight: 1.35,
                 }}
@@ -432,28 +432,28 @@ export const PhoneMockup: React.FC<{
       {/* WeChat Bottom Input Bar */}
       <div
         style={{
-          height: 64,
+          height: 60,
           background: color.phoneHeader,
           borderTop: `1px solid ${color.line}`,
           display: 'flex',
           alignItems: 'center',
-          padding: '0 14px',
-          gap: 10,
+          padding: '0 10px',
+          gap: 8,
           flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: 24, color: color.gray }}>⊕</span>
+        <span style={{ fontSize: 20, color: color.gray }}>⊕</span>
         <div
           style={{
             flex: 1,
-            height: 40,
+            height: 38,
             background: color.ground,
             border: `1px solid ${color.line}`,
             borderRadius: 4,
             display: 'flex',
             alignItems: 'center',
-            padding: '0 12px',
-            fontSize: 13,
+            padding: '0 10px',
+            fontSize: 12.5,
             color: color.ink,
             fontFamily: font.sans,
           }}
@@ -470,7 +470,7 @@ export const PhoneMockup: React.FC<{
               style={{
                 display: 'inline-block',
                 width: 2,
-                height: 16,
+                height: 15,
                 background: color.wechat,
                 marginLeft: 2,
                 opacity: Math.sin(frame / 4) > 0 ? 1 : 0,
@@ -481,15 +481,15 @@ export const PhoneMockup: React.FC<{
         <button
           type="button"
           style={{
-            height: 38,
-            padding: '0 14px',
+            height: 36,
+            padding: '0 12px',
             borderRadius: 4,
             background:
               (frame >= 415 && frame <= 425) || (frame >= 612 && frame <= 620)
                 ? '#059648'
                 : color.wechat,
             color: '#ffffff',
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: 600,
             border: 'none',
             display: 'flex',

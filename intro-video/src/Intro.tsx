@@ -16,14 +16,17 @@ const CAMERA_TRACK: [number, number, number, number][] = [
   [145, 500, 530, 1.35],
   // Step 2: Smooth shift to Console QR & bind command
   [185, 630, 530, 1.30],
-  [340, 630, 530, 1.30],
+  [335, 630, 530, 1.30],
   // Camera scroll / pan across from Browser to Phone!
-  [380, 1445, 520, 1.20],
+  [375, 1445, 520, 1.20],
   // Step 3: WeChat bind
   [545, 1445, 520, 1.20],
-  // Step 4: Gentle push-in to WeChat chat
-  [580, 1445, 510, 1.26],
-  [740, 1445, 510, 1.26],
+  // Step 4: Zoom into phone input bar while user is typing
+  [575, 1445, 750, 1.45],
+  [618, 1445, 750, 1.45],
+  // Glide back up to frame the conversation as AI reply streams
+  [652, 1445, 490, 1.22],
+  [740, 1445, 490, 1.22],
   // Outro: Camera pulls back to reveal the whole scene
   [785, 960, 540, 0.94],
   [TOTAL_FRAMES, 960, 540, 0.94],
@@ -37,18 +40,18 @@ const CURSOR_PATH: CursorPathPoint[] = [
   { frame: 68, x: 280, y: 700 }, // Send button
   { frame: 80, x: 280, y: 700 },
   { frame: 120, x: 380, y: 750 },
-  // Step 2: Moves to Copy Button on Console
+  // Step 2: Moves swiftly to Copy Button on Console
   { frame: 195, x: 500, y: 550 },
-  { frame: 280, x: 750, y: 600 },
-  { frame: 328, x: 885, y: 615 }, // Copy button
-  { frame: 345, x: 885, y: 615 },
-  // Disappears during camera pan
-  { frame: 355, x: 980, y: 630 },
+  { frame: 255, x: 550, y: 560 },
+  { frame: 285, x: 885, y: 615 }, // Reach copy button quickly
+  { frame: 305, x: 885, y: 615 },
+  // Disappears before camera pan to phone
+  { frame: 330, x: 960, y: 630 },
 ];
 
 const CURSOR_CLICKS: ClickPoint[] = [
   { frame: 70, x: 280, y: 700 }, // Click "发送登录邮件"
-  { frame: 330, x: 885, y: 615 }, // Click "复制命令"
+  { frame: 290, x: 885, y: 615 }, // Click "复制命令"
 ];
 
 const easeSmooth = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -149,14 +152,15 @@ export const Intro: React.FC = () => {
       <Sfx name="pop" at={85} />
       <Sfx name="whoosh" at={160} />
       <Sfx name="pop" at={260} />
-      <Sfx name="click" at={330} />
-      <Sfx name="whoosh" at={340} />
+      <Sfx name="click" at={290} />
+      <Sfx name="whoosh" at={335} />
       <Sfx name="typing" at={385} duration={30} />
       <Sfx name="pop" at={420} />
       <Sfx name="pop" at={455} />
-      <Sfx name="whoosh" at={545} />
+      <Sfx name="whoosh" at={550} />
       <Sfx name="typing" at={575} duration={37} />
       <Sfx name="pop" at={615} />
+      <Sfx name="whoosh" at={620} />
       <Sfx name="pop" at={635} />
       <Sfx name="whoosh" at={740} />
 
@@ -178,11 +182,11 @@ export const Intro: React.FC = () => {
         {/* Left: Abstracted Browser / Console Mockup */}
         <BrowserMockup x={90} y={230} width={940} height={620} />
 
-        {/* Right: Abstracted WeChat Phone Mockup */}
-        <PhoneMockup x={1220} y={160} width={450} height={760} />
+        {/* Right: Abstracted WeChat Phone Mockup (width 390, centered at X 1445) */}
+        <PhoneMockup x={1250} y={160} width={390} height={760} />
 
         {/* Animated Mouse Cursor (Visible in Step 1 & 2) */}
-        <Cursor path={CURSOR_PATH} clicks={CURSOR_CLICKS} visibleRange={[10, 355]} />
+        <Cursor path={CURSOR_PATH} clicks={CURSOR_CLICKS} visibleRange={[10, 335]} />
       </div>
 
       {/* Outro Overlay Card (Frame >= 750) */}

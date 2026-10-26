@@ -56,8 +56,8 @@ export const BrowserMockup: React.FC<{
   });
   const isScanned = frame >= 260;
 
-  // Command copied at frame 330
-  const isCopied = frame >= 330;
+  // Command copied quickly at frame 290
+  const isCopied = frame >= 290;
 
   return (
     <div
