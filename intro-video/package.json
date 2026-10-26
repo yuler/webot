@@ -1,0 +1,10 @@
+{
+  "name": "@webot/intro-video",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "render": "/home/yule/Projects/moge/apps/intro-video/node_modules/.bin/remotion render src/index.ts Intro ../public/intro.mp4 --codec h264 --crf 22 --audio-bitrate 128k --browser-executable=/usr/bin/chromium --gl=angle",
+    "poster": "/home/yule/Projects/moge/apps/intro-video/node_modules/.bin/remotion still src/index.ts Intro ../public/intro-poster.jpg --frame 800 --jpeg-quality 92 --browser-executable=/usr/bin/chromium --gl=angle"
+  }
+}

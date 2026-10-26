@@ -13,17 +13,22 @@ const STEPS = [
   {
     n: "01",
     title: "邮箱登录",
-    body: "填写邮箱，点开邮件里的魔法链接进入控制台。",
+    body: "填写邮箱，点开邮件里的魔法链接或输入 6 位验证码进入控制台。",
   },
   {
     n: "02",
-    title: "扫码与绑定",
-    body: "首次在控制台扫码让 ClawBot 上线；之后把 /bind 命令发到微信。已上线时可直接用绑定码重绑。",
+    title: "微信扫码",
+    body: "在控制台扫描二维码，启动 ClawBot 机器人服务并获取专属绑定码。",
   },
   {
     n: "03",
-    title: "开始聊天",
-    body: "绑定后微信消息由 DeepSeek 回复，历史可在控制台回看。",
+    title: "指令绑定",
+    body: "打开微信向 WeixinClawBot 发送 /bind 指令，秒级完成微信绑定。",
+  },
+  {
+    n: "04",
+    title: "开始对话",
+    body: "绑定后微信消息由 DeepSeek 智能回复，对话记录在控制台随时回看。",
   },
 ] as const;
 
@@ -64,10 +69,23 @@ function LandingPage() {
         </div>
 
         <figure className="landing-video m-0">
-          <video controls playsInline preload="metadata" aria-label="WeBot 使用简介">
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster="/intro-poster.jpg"
+            aria-label="WeBot 使用简介"
+          >
             <source src="/intro.mp4" type="video/mp4" />
+            <track
+              kind="captions"
+              src="/intro.vtt"
+              srcLang="zh"
+              label="中文字幕"
+              default
+            />
           </video>
-          <figcaption className="type-meta">使用演示</figcaption>
+          <figcaption className="type-meta">4 步上手演示（带中文字幕）</figcaption>
         </figure>
       </section>
 
