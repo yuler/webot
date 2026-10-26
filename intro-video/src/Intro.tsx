@@ -246,7 +246,7 @@ export const Intro: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              <span>webot.yuler.cc</span>
+              <span>webot.yuler.dev</span>
             </div>
           </div>
         </div>
