@@ -54,6 +54,17 @@ function LandingPage() {
         <h2 id="how-heading" className="type-app-title">
           怎么用
         </h2>
+        <div className="landing-intro mt-4">
+          <video
+            className="landing-intro-video"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label="weBOT 使用简介"
+          >
+            <source src="/intro.mp4" type="video/mp4" />
+          </video>
+        </div>
         <ol className="landing-list mt-4">
           {STEPS.map((s) => (
             <li key={s.n} className="landing-list-item">
