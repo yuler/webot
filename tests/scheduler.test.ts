@@ -5,6 +5,8 @@ import {
   startDailyArchiveScheduler,
   stopDailyArchiveScheduler,
   isSchedulerRunning,
+  parseArchiveHour,
+  parseArchiveMinute,
 } from "../src/claw/scheduler";
 import { rateLimiter } from "../src/claw/rate-limit";
 import { onChatMemoryResetAll } from "../src/chat-memory";
@@ -64,5 +66,17 @@ describe("Daily Archive Scheduler", () => {
 
     scheduler.stop();
     expect(isSchedulerRunning()).toBe(false);
+  });
+
+  test("parseArchiveHour/Minute fall back on invalid values", () => {
+    expect(parseArchiveHour(undefined)).toBe(4);
+    expect(parseArchiveHour("abc")).toBe(4);
+    expect(parseArchiveHour("24")).toBe(4);
+    expect(parseArchiveHour("-1")).toBe(4);
+    expect(parseArchiveHour("7")).toBe(7);
+    expect(parseArchiveMinute(undefined)).toBe(0);
+    expect(parseArchiveMinute("xyz")).toBe(0);
+    expect(parseArchiveMinute("60")).toBe(0);
+    expect(parseArchiveMinute("15")).toBe(15);
   });
 });

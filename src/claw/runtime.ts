@@ -305,6 +305,8 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       continue;
     }
 
+    // /reset clears chat memory + soft-deletes console history only.
+    // It does NOT call rateLimiter.resetUser — daily quota still applies until 04:00 archive.
     if (text === "/reset" || text === "/clear") {
       softDeleteMessagesForUser(binding.userId);
       ds.resetUser(fromUser);

@@ -18,6 +18,8 @@ COPY --from=build /app/.output ./.output
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV SQLITE_PATH=/data/webot.sqlite
+# Daily archive uses Date#setHours (local). Pin so 04:00 = Asia/Shanghai 凌晨.
+ENV TZ=Asia/Shanghai
 EXPOSE 3000
 VOLUME ["/data"]
 

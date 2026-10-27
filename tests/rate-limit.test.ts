@@ -1,5 +1,10 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { RateLimiter, rateLimiter } from "../src/claw/rate-limit";
+import {
+  RateLimiter,
+  rateLimiter,
+  parseEnvInt,
+  limitsFromEnv,
+} from "../src/claw/rate-limit";
 
 describe("Dual-layer RateLimiter", () => {
   let limiter: RateLimiter;
@@ -104,5 +109,42 @@ describe("Dual-layer RateLimiter", () => {
 
     limiter.resetUser("u1");
     expect(limiter.checkLimit("u1", 4000).allowed).toBe(true);
+  });
+
+  test("denied checks do not consume daily quota", () => {
+    const tight = new RateLimiter(1, 2);
+    expect(tight.checkLimit("u", 1000).allowed).toBe(true);
+    // minute blocked — should not bump daily further
+    expect(tight.checkLimit("u", 2000).allowed).toBe(false);
+    expect(tight.getStats("u", 2000).dailyCount).toBe(1);
+  });
+});
+
+describe("Rate limit env parsing", () => {
+  test("parseEnvInt falls back on empty / invalid / non-finite", () => {
+    expect(parseEnvInt(undefined, 10)).toBe(10);
+    expect(parseEnvInt("", 10)).toBe(10);
+    expect(parseEnvInt("  ", 10)).toBe(10);
+    expect(parseEnvInt("abc", 10)).toBe(10);
+    expect(parseEnvInt("NaN", 10)).toBe(10);
+    expect(parseEnvInt("12.5", 10)).toBe(12.5);
+    expect(parseEnvInt("0", 10)).toBe(0);
+    expect(parseEnvInt("-1", 10)).toBe(-1);
+  });
+
+  test("limitsFromEnv uses defaults for missing or invalid values", () => {
+    expect(limitsFromEnv({} as NodeJS.ProcessEnv)).toEqual({ perMinute: 10, perDay: 100 });
+    expect(
+      limitsFromEnv({
+        RATE_LIMIT_PER_MINUTE: "abc",
+        RATE_LIMIT_PER_DAY: "nope",
+      } as NodeJS.ProcessEnv),
+    ).toEqual({ perMinute: 10, perDay: 100 });
+    expect(
+      limitsFromEnv({
+        RATE_LIMIT_PER_MINUTE: "7",
+        RATE_LIMIT_PER_DAY: "42",
+      } as NodeJS.ProcessEnv),
+    ).toEqual({ perMinute: 7, perDay: 42 });
   });
 });

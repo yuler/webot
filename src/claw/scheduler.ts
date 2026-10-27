@@ -1,13 +1,15 @@
 /**
  * In-process daily archive scheduler for WeBot.
- * Automatically runs daily at 04:00 AM (local time) to:
+ * Automatically runs daily at 04:00 (process local time; Docker sets TZ=Asia/Shanghai) to:
  * 1. Reset all in-memory chat histories (preventing context token blow-up across days).
  * 2. Reset daily rate limit quotas.
  * 3. Log execution summary without affecting SQLite database message history.
+ *
+ * Single-process assumption: one in-memory Map + one setTimeout chain per process.
  */
 
 import { resetAllChatMemory } from "../chat-memory";
-import { rateLimiter } from "./rate-limit";
+import { parseEnvInt, rateLimiter } from "./rate-limit";
 
 export interface ArchiveResult {
   executedAt: string;
@@ -15,8 +17,23 @@ export interface ArchiveResult {
   rateLimitsReset: boolean;
 }
 
+/** Hour 0–23 from env; invalid → fallback. */
+export function parseArchiveHour(raw: string | undefined, fallback = 4): number {
+  const n = parseEnvInt(raw, fallback);
+  if (!Number.isInteger(n) || n < 0 || n > 23) return fallback;
+  return n;
+}
+
+/** Minute 0–59 from env; invalid → fallback. */
+export function parseArchiveMinute(raw: string | undefined, fallback = 0): number {
+  const n = parseEnvInt(raw, fallback);
+  if (!Number.isInteger(n) || n < 0 || n > 59) return fallback;
+  return n;
+}
+
 /**
- * Calculates milliseconds from `fromDate` until the next occurrence of targetHour:targetMinute.
+ * Calculates milliseconds from `fromDate` until the next occurrence of targetHour:targetMinute
+ * in the process local timezone (set TZ=Asia/Shanghai in Docker so 04:00 means 北京时间凌晨).
  */
 export function msUntilNextTarget(
   targetHour = 4,
@@ -80,18 +97,17 @@ export function startDailyArchiveScheduler(options?: {
     };
   }
 
-  const targetHour =
-    options?.targetHour ??
-    (process.env.ARCHIVE_HOUR ? Number(process.env.ARCHIVE_HOUR) : 4);
+  const targetHour = options?.targetHour ?? parseArchiveHour(process.env.ARCHIVE_HOUR, 4);
   const targetMinute =
-    options?.targetMinute ??
-    (process.env.ARCHIVE_MINUTE ? Number(process.env.ARCHIVE_MINUTE) : 0);
+    options?.targetMinute ?? parseArchiveMinute(process.env.ARCHIVE_MINUTE, 0);
 
   function scheduleNext() {
     const ms = msUntilNextTarget(targetHour, targetMinute);
-    const hours = (ms / 3_600_000).toFixed(2);
+    // Guard: never pass NaN/negative to setTimeout (would fire in a tight loop)
+    const delay = Number.isFinite(ms) && ms > 0 ? ms : 60_000;
+    const hours = (delay / 3_600_000).toFixed(2);
     console.log(
-      `[Scheduler] 每日自动归档任务已就绪：将在 ${hours} 小时后（${String(targetHour).padStart(2, "0")}:${String(targetMinute).padStart(2, "0")}）自动执行。`,
+      `[Scheduler] 每日自动归档任务已就绪：将在 ${hours} 小时后（${String(targetHour).padStart(2, "0")}:${String(targetMinute).padStart(2, "0")} 本地时区）自动执行。`,
     );
 
     schedulerTimer = setTimeout(() => {
@@ -103,7 +119,7 @@ export function startDailyArchiveScheduler(options?: {
       } finally {
         scheduleNext();
       }
-    }, ms);
+    }, delay);
   }
 
   scheduleNext();

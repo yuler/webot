@@ -5,6 +5,12 @@
  *
  * Configurable via RATE_LIMIT_PER_MINUTE and RATE_LIMIT_PER_DAY.
  * Values <= 0 disable that layer of rate limiting.
+ * Invalid / non-finite env values fall back to defaults (same idea as SESSION_SECRET
+ * fail-closed elsewhere: refuse bad config by using a known-safe default here).
+ *
+ * Quota is consumed when a request is *accepted to call AI* (checkLimit returns
+ * allowed), not only after a successful model reply — so timeouts/API errors still
+ * count. WeChat /reset clears chat memory only; it does not call resetUser here.
  */
 
 export interface RateLimitResult {
@@ -20,12 +26,30 @@ interface UserLimitBucket {
   dailyCount: number;
 }
 
+/** Parse an env int; empty/invalid → fallback. Values may be <= 0 (disable layer). */
+export function parseEnvInt(raw: string | undefined, fallback: number): number {
+  if (raw === undefined) return fallback;
+  const trimmed = raw.trim();
+  if (trimmed === "") return fallback;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+export function limitsFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): { perMinute: number; perDay: number } {
+  return {
+    perMinute: parseEnvInt(env.RATE_LIMIT_PER_MINUTE, 10),
+    perDay: parseEnvInt(env.RATE_LIMIT_PER_DAY, 100),
+  };
+}
+
 export class RateLimiter {
   private buckets = new Map<string, UserLimitBucket>();
 
   constructor(
-    private limitPerMinute: number = Number(process.env.RATE_LIMIT_PER_MINUTE || 10),
-    private limitPerDay: number = Number(process.env.RATE_LIMIT_PER_DAY || 100),
+    private limitPerMinute: number = limitsFromEnv().perMinute,
+    private limitPerDay: number = limitsFromEnv().perDay,
   ) {}
 
   public getLimitPerMinute(): number {
@@ -43,7 +67,8 @@ export class RateLimiter {
 
   /**
    * Check if a request from key (e.g. wechatUserId) is allowed.
-   * If allowed, records the request timestamp and increments daily count.
+   * If allowed, records the request timestamp and increments daily count
+   * immediately (before the AI call). Denied checks do not consume quota.
    */
   public checkLimit(key: string, now: number = Date.now()): RateLimitResult {
     let bucket = this.buckets.get(key);
@@ -78,7 +103,7 @@ export class RateLimiter {
       };
     }
 
-    // Allowed: record request
+    // Allowed: record request (consumed even if the subsequent AI call fails)
     bucket.timestamps.push(now);
     bucket.dailyCount += 1;
 
@@ -102,7 +127,11 @@ export class RateLimiter {
     }
   }
 
-  /** Reset a specific user (e.g. when user triggers /reset). */
+  /**
+   * Clear minute + daily buckets for one key (tests / explicit admin wipe).
+   * Not used by WeChat `/reset` — that only clears chat memory / soft-deletes DB rows.
+   * Daily quota resets at the scheduled archive (default 04:00 Asia/Shanghai).
+   */
   public resetUser(key: string): void {
     this.buckets.delete(key);
   }
