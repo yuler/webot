@@ -13,7 +13,8 @@
     "video:poster": "cd intro-video && MISE_YES=1 /home/yule/Projects/moge/apps/intro-video/node_modules/.bin/remotion still src/index.ts Intro ../src/assets/intro-poster.jpg --frame 800 --jpeg-quality 92 --browser-executable=/usr/bin/chromium --gl=angle",
     "test": "bun test tests",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "production:sql": "bun run scripts/production-db-executor.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
