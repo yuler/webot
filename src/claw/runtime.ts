@@ -12,8 +12,10 @@ import {
   findBindingByCode,
 } from "../auth/bindings";
 import { insertMessage, softDeleteMessagesForUser } from "../auth/messages";
-import { onChatMemoryReset } from "../chat-memory";
+import { onChatMemoryReset, onChatMemoryResetAll } from "../chat-memory";
 import { DeepSeekBot } from "./deepseek";
+import { rateLimiter } from "./rate-limit";
+import { startDailyArchiveScheduler } from "./scheduler";
 import {
   claimBotToken,
   clearClawCredentials,
@@ -56,8 +58,12 @@ function getDeepseek(): DeepSeekBot {
       process.env.AI_MODEL?.trim() ||
       process.env.DEEPSEEK_MODEL?.trim() ||
       "deepseek-chat";
-    deepseek = new DeepSeekBot(apiKey, baseUrl, model);
+    const systemPrompt =
+      process.env.SYSTEM_PROMPT?.trim() ||
+      process.env.AI_SYSTEM_PROMPT?.trim();
+    deepseek = new DeepSeekBot(apiKey, baseUrl, model, systemPrompt);
     onChatMemoryReset((wechatUserId) => deepseek!.resetUser(wechatUserId));
+    onChatMemoryResetAll(() => deepseek!.resetAllUsers());
   }
   return deepseek;
 }
@@ -299,6 +305,8 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       continue;
     }
 
+    // /reset clears chat memory + soft-deletes console history only.
+    // It does NOT call rateLimiter.resetUser — daily quota still applies until 04:00 archive.
     if (text === "/reset" || text === "/clear") {
       softDeleteMessagesForUser(binding.userId);
       ds.resetUser(fromUser);
@@ -310,6 +318,29 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
         wechatMessageId: msgId || null,
       });
       await ilink.sendMessage(botToken, fromUser, contextToken, "🧹 会话记忆已重置，我们可以重新开始！");
+      continue;
+    }
+
+    // Rate limit check before calling AI
+    const limit = rateLimiter.checkLimit(fromUser);
+    if (!limit.allowed) {
+      console.warn(
+        `[Claw:${ownerUserId.slice(0, 8)}] 提问受限 (${limit.reason}) 用户 ${fromUser.slice(0, 8)}`,
+      );
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "user",
+        content: text,
+        wechatMessageId: msgId || null,
+      });
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "assistant",
+        content: limit.message!,
+      });
+      await ilink.sendMessage(botToken, fromUser, contextToken, limit.message!);
       continue;
     }
 
@@ -418,6 +449,7 @@ export function startClawRuntime(): void {
   if (runtimeStarted) return;
   runtimeStarted = true;
   getDeepseek();
+  startDailyArchiveScheduler();
   if (skipBot()) {
     console.log("[Claw] WEBOT_SKIP_BOT=1 — per-user workers idle until enabled");
     return;
