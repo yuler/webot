@@ -4,7 +4,7 @@ Bun + TypeScript 本地/容器服务：微信 **ClawBot**（iLink）长轮询 + 
 
 **生产：** [https://webot.yuler.dev/](https://webot.yuler.dev/)
 
-**界面：** 见根目录 [`DESIGN.md`](./DESIGN.md)（自 k41 黑白直角方案）。
+**界面：** 见根目录 [`DESIGN.md`](./DESIGN.md)（黑白直角设计规范）。
 
 ## 数据模型（MVP）
 
@@ -41,9 +41,9 @@ bun run web:dev          # http://127.0.0.1:5173  代理 /api → :3000
 
 生产：`bun run web:build` 后 `bun run start` 会用 Nitro `standard` 构建的 `{ fetch }` 托管 TanStack Start UI（与 `/api` 同端口）。
 
-### 发信（与 moge 同邮箱 / Dokploy）
+### 发信（SMTP / Dokploy）
 
-WeBot 优先走 **SMTP**，环境变量名与 moge 一致，便于在 Dokploy 上从 moge 应用复制：
+WeBot 优先走 **SMTP**，可直接配置标准 SMTP 环境变量（或在 Dokploy / 容器环境中注入）：
 
 | 变量 | 说明 |
 |------|------|

@@ -53,7 +53,7 @@ beforeAll(async () => {
       // leave COOKIE_SECURE / NODE_ENV unset for HTTP tests; separate Secure test below
       NODE_ENV: "test",
       COOKIE_SECURE: "",
-      // Force mail:dev sink — do not inherit moge/Dokploy SMTP or Resend from host env
+      // Force mail:dev sink — do not inherit host SMTP or Resend from environment
       SMTP_ADDRESS: "",
       SMTP_USERNAME: "",
       SMTP_PASSWORD: "",

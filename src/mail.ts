@@ -1,7 +1,7 @@
 /**
  * Login email delivery (magic link primary; OTP digits as backup).
  *
- * Sends through the configured SMTP account (same keys as moge):
+ * Sends through the configured SMTP account:
  * SMTP_ADDRESS, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
  * SMTP_SSL_ENABLED, SMTP_DOMAIN, EMAIL_SENDER.
  * Resend is only a fallback when SMTP is unset. Neither → dev sink.
@@ -42,7 +42,7 @@ async function sendViaSmtp(to: string, subject: string, text: string): Promise<v
   const pass = process.env.SMTP_PASSWORD!.trim();
   const domain = process.env.SMTP_DOMAIN?.trim();
   const sslRaw = process.env.SMTP_SSL_ENABLED?.trim().toLowerCase();
-  // Default SSL on for 465 (moge prod); honor explicit false/0
+  // Default SSL on for port 465; honor explicit false/0
   const secure =
     sslRaw === "false" || sslRaw === "0"
       ? false

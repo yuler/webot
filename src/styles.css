@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design tokens — DESIGN.md（自 k41 黑白直角方案）
+ * Design tokens — DESIGN.md（黑白直角方案）
  */
 
 :root {

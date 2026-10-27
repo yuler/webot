@@ -45,7 +45,7 @@ function MoonIcon() {
   );
 }
 
-/** Top-right theme control: one icon, click toggles dark ↔ light (K41-style). */
+/** Top-right theme control: one icon, click toggles dark ↔ light. */
 export function ThemeSwitch({ className = "" }: { className?: string }) {
   const [theme, setLocal] = useState<Theme>("dark");
 
