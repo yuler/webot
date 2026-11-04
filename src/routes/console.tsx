@@ -5,12 +5,19 @@ import { AppShell } from "@/components/AppShell";
 import { ClawQr, useBotStatus } from "@/components/ClawQr";
 import {
   clearMessages,
+  completeTodoApi,
+  createTodoApi,
+  deleteTodoApi,
   disconnectBinding,
   fetchMe,
   fetchMessages,
+  fetchTodos,
+  fetchTodosSettings,
   logout,
+  patchTodosSettings,
   resetBindCode,
   type Message,
+  type Todo,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/console")({
@@ -22,7 +29,7 @@ export const Route = createFileRoute("/console")({
   component: ConsolePage,
 });
 
-type Tab = "setup" | "messages";
+type Tab = "setup" | "messages" | "todos";
 
 const BINDING_STATUS: Record<string, string> = {
   active: "已绑定",
@@ -194,6 +201,14 @@ function ConsolePage() {
         >
           消息{messages.length ? <span className="tabular">（{messages.length}）</span> : null}
         </button>
+        <button
+          type="button"
+          className="btn-ghost"
+          aria-pressed={tab === "todos"}
+          onClick={() => switchTab("todos")}
+        >
+          待办
+        </button>
       </div>
 
       <div
@@ -316,6 +331,10 @@ function ConsolePage() {
             isBound={isBound}
           />
         </div>
+
+        <div className="console-pane console-pane--todos">
+          <TodosPanel visible={tab === "todos"} />
+        </div>
       </div>
     </AppShell>
   );
@@ -436,3 +455,173 @@ function MessagesPanel({
     </section>
   );
 }
+
+function TodosPanel({ visible: _visible }: { visible: boolean }) {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [remindLocal, setRemindLocal] = useState("");
+
+  const settingsQ = useQuery({
+    queryKey: ["todos-settings"],
+    queryFn: fetchTodosSettings,
+  });
+  const todosQ = useQuery({
+    queryKey: ["todos", "open"],
+    queryFn: () => fetchTodos("open"),
+    refetchInterval: 8000,
+  });
+
+  const toggleM = useMutation({
+    mutationFn: (todosEnabled: boolean) => patchTodosSettings({ todosEnabled }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["todos-settings"] }),
+  });
+  const createM = useMutation({
+    mutationFn: () =>
+      createTodoApi({
+        title: title.trim(),
+        remindAt: remindLocal ? new Date(remindLocal).toISOString() : null,
+      }),
+    onSuccess: () => {
+      setTitle("");
+      setRemindLocal("");
+      qc.invalidateQueries({ queryKey: ["todos"] });
+    },
+  });
+  const completeM = useMutation({
+    mutationFn: (id: string) => completeTodoApi(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["todos"] }),
+  });
+  const deleteM = useMutation({
+    mutationFn: (id: string) => deleteTodoApi(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["todos"] }),
+  });
+
+  const enabled = settingsQ.data?.settings.todosEnabled ?? true;
+  const tips = settingsQ.data?.tips ?? todosQ.data?.tips ?? "";
+  const todos = todosQ.data?.todos ?? [];
+
+  return (
+    <section className="panel" aria-labelledby="todos-heading">
+      <div className="panel-head">
+        <div className="min-w-0">
+          <h2 id="todos-heading" className="type-app-title">
+            待办
+          </h2>
+          <p className="type-meta mt-1">极简单次提醒 · 模块默认开启 · 与微信 ClawBot 对话也可创建</p>
+        </div>
+        <button
+          type="button"
+          className={`btn-ghost${toggleM.isPending ? " is-loading" : ""}`}
+          aria-pressed={enabled}
+          disabled={toggleM.isPending || settingsQ.isPending}
+          onClick={() => toggleM.mutate(!enabled)}
+        >
+          {enabled ? "已开启" : "已关闭"}
+        </button>
+      </div>
+
+      {tips ? (
+        <p className="notice mt-3" role="note">
+          <span className="notice-tag">Tips</span>
+          <span>{tips}</span>
+        </p>
+      ) : null}
+
+      <form
+        className="mt-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!title.trim() || !enabled) return;
+          createM.mutate();
+        }}
+      >
+        <label className="type-meta" htmlFor="todo-title">
+          新待办
+        </label>
+        <input
+          id="todo-title"
+          className="field mt-1"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="例如：交社保"
+          disabled={!enabled || createM.isPending}
+        />
+        <label className="type-meta mt-3 block" htmlFor="todo-remind">
+          提醒时间（可选，本地时区）
+        </label>
+        <input
+          id="todo-remind"
+          className="field mt-1"
+          type="datetime-local"
+          value={remindLocal}
+          onChange={(e) => setRemindLocal(e.target.value)}
+          disabled={!enabled || createM.isPending}
+        />
+        <div className="actions mt-3">
+          <button
+            type="submit"
+            className={`btn-solid${createM.isPending ? " is-loading" : ""}`}
+            disabled={!enabled || !title.trim() || createM.isPending}
+          >
+            添加
+          </button>
+        </div>
+        {createM.isError ? (
+          <p className="notice notice--error mt-3" role="alert">
+            <span className="notice-tag">出错</span>
+            <span>创建失败</span>
+          </p>
+        ) : null}
+      </form>
+
+      {todosQ.isPending ? (
+        <p className="type-meta mt-4">加载中…</p>
+      ) : todos.length === 0 ? (
+        <div className="timeline-empty mt-4">
+          <p className="type-meta">暂无待办</p>
+          <p className="type-meta mt-1">在微信说「明天 9 点提醒我…」或在上方添加</p>
+        </div>
+      ) : (
+        <ul className="timeline mt-4">
+          {todos.map((t: Todo) => (
+            <li key={t.id} className="timeline-row">
+              <div className="timeline-meta">
+                <span className="timeline-role">待办</span>
+                {t.remindAt ? (
+                  <time className="tabular" dateTime={t.remindAt}>
+                    {new Date(t.remindAt).toLocaleString("zh-CN", { hour12: false })}
+                  </time>
+                ) : (
+                  <span className="type-meta">无提醒</span>
+                )}
+              </div>
+              <p className="timeline-body">{t.title}</p>
+              <div className="actions mt-2">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={completeM.isPending}
+                  onClick={() => completeM.mutate(t.id)}
+                >
+                  完成
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={deleteM.isPending}
+                  onClick={() => {
+                    if (!window.confirm(`删除待办「${t.title}」？`)) return;
+                    deleteM.mutate(t.id);
+                  }}
+                >
+                  删除
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+

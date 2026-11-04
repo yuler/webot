@@ -1,4 +1,4 @@
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -99,3 +99,79 @@ export const clawBotSessions = sqliteTable("claw_bot_sessions", {
   qrRev: text("qr_rev").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
 });
+
+/** Per-user module flags + heuristic ClawBot proactive window state (待办). */
+export const userModuleSettings = sqliteTable("user_module_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  /** Module id `todos`; UI copy 「待办」. Default ON. */
+  todosEnabled: integer("todos_enabled", { mode: "boolean" }).notNull().default(true),
+  timezone: text("timezone").notNull().default("Asia/Shanghai"),
+  tipsAckedAt: text("tips_acked_at"),
+  /** Heuristic: last inbound WeChat message time (refreshes ~24h window). */
+  lastUserInboundAt: text("last_user_inbound_at"),
+  /** Heuristic proactive sends in current window (~10). Reset on inbound. */
+  proactiveSentInWindow: integer("proactive_sent_in_window").notNull().default(0),
+  windowStartedAt: text("window_started_at"),
+  /** Last iLink context_token — required for proactive sendmessage. */
+  lastContextToken: text("last_context_token"),
+  lastWechatUserId: text("last_wechat_user_id"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+/** Google Tasks–style single-shot 待办; multi-tenant by user_id. No recurrence in v1. */
+export const todos = sqliteTable(
+  "todos",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    title: text("title").notNull(),
+    notes: text("notes"),
+    dueAt: text("due_at"),
+    remindAt: text("remind_at"),
+    /** open | done | cancelled */
+    status: text("status").notNull().default("open"),
+    completedAt: text("completed_at"),
+    /** wechat | console | api */
+    source: text("source").notNull().default("api"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    deletedAt: text("deleted_at"),
+  },
+  (t) => ({
+    userIdx: index("todos_user_id_idx").on(t.userId),
+    statusIdx: index("todos_status_idx").on(t.status),
+    remindIdx: index("todos_remind_at_idx").on(t.remindAt),
+  }),
+);
+
+export const todoReminders = sqliteTable(
+  "todo_reminders",
+  {
+    id: text("id").primaryKey(),
+    todoId: text("todo_id")
+      .notNull()
+      .references(() => todos.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    scheduledAt: text("scheduled_at").notNull(),
+    sentAt: text("sent_at"),
+    /** pending | sent | skipped_window | skipped_quota | failed */
+    status: text("status").notNull().default("pending"),
+    skipReason: text("skip_reason"),
+    attempt: integer("attempt").notNull().default(0),
+    /** Max 1 catch-up per todo after skip. */
+    catchupUsed: integer("catchup_used", { mode: "boolean" }).notNull().default(false),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => ({
+    todoIdx: index("todo_reminders_todo_id_idx").on(t.todoId),
+    userIdx: index("todo_reminders_user_id_idx").on(t.userId),
+    statusSchedIdx: index("todo_reminders_status_sched_idx").on(t.status, t.scheduledAt),
+  }),
+);
