@@ -1,6 +1,6 @@
 # Theme
 
-> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）。顶栏左边 SVG logo（`LogoMark`，微信图标 + 右上角 AI 角标）+ `WeBot`，右边「登录」或「控制台」（当前页高亮）+ `ThemeSwitch`。退出与清空聊天放在控制台页内。生产站点：https://webot.yuler.dev/
+> WeBot 页面映射：`/`（介绍首页）、`/login`（魔法链接登录）、`/console`（扫码 + 绑定 + 消息）、`/todos`（登录后外部待办）。顶栏左边 SVG logo（`LogoMark`，微信图标 + 右上角 AI 角标）+ `WeBot`，右边未登录「登录」、已登录「待办」+「控制台」（当前页高亮）+ `ThemeSwitch`。退出放在控制台/待办页内。生产站点：https://webot.yuler.dev/
 
 界面文案用中文。颜色、字号和组件的名字用英文。
 
@@ -50,7 +50,7 @@
 
 ### `AppBar`
 
-顶栏极简。左是 `LogoMark`（微信双气泡图标，右上角叠 `AI` 角标，颜色跟 `ink`）+ `WeBot` 字标（首页为 `<span>`，其它页链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。
+顶栏极简。左是 `LogoMark`（微信双气泡图标，右上角叠 `AI` 角标，颜色跟 `ink`）+ `WeBot` 字标（首页为 `<span>`，其它页链到 `/`）；右是按登录态的入口（未登录「登录」→ `/login`，已登录「待办」→ `/todos` +「控制台」→ `/console`，当前路由高亮）以及右上角 `ThemeSwitch`。不放扫码或退出。链接字色 `gray`，激活为 `ink` 底边高亮，距下面内容 18px。
 
 ### `Timeline`
 
@@ -84,7 +84,7 @@
 | 表单主按钮 | 通栏 | 自然宽度 | 自然宽度 |
 | 控制台 | `Segmented` 切换 | `Segmented` 切换 | 左 5 / 右 7 两栏 |
 
-内容最大宽：首页、控制台 1080px，登录 440px。顶栏通栏，内容与内容区对齐。尊重 `safe-area-inset-*`。
+内容最大宽：首页、控制台、待办 1080px，登录 440px。顶栏通栏，内容与内容区对齐。尊重 `safe-area-inset-*`。
 
 ## Interaction
 
