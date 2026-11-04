@@ -3,6 +3,31 @@ export type ChatMessage = {
   content: string;
 };
 
+export type ToolCallResult = { ok: boolean; message: string; data?: unknown };
+
+type ApiToolCall = {
+  id: string;
+  type?: string;
+  function: { name: string; arguments: string };
+};
+
+type ApiMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: ApiToolCall[];
+  tool_call_id?: string;
+};
+
+export type ChatOptions = {
+  systemExtra?: string;
+  tools?: unknown[];
+  executeTool?: (
+    name: string,
+    args: Record<string, unknown>,
+  ) => ToolCallResult | Promise<ToolCallResult>;
+  maxToolRounds?: number;
+};
+
 export const DEFAULT_SYSTEM_PROMPT =
   "你是运行在微信里的智能助手「WeBot 智能助手」。回答简明得体、排版易于微信移动端阅读。\n\n" +
   "【安全与身份核心原则】\n" +
@@ -46,7 +71,7 @@ export class DeepSeekBot {
   public async chat(
     userId: string,
     userPrompt: string,
-    options?: { systemExtra?: string },
+    options?: ChatOptions,
   ): Promise<string> {
     if (!this.apiKey) {
       return "⚠️ 服务端还没有配置 AI 模型的 API_KEY，暂时无法回复。";
@@ -62,41 +87,94 @@ export class DeepSeekBot {
       .filter(Boolean)
       .join("\n\n");
 
-    const messages: ChatMessage[] = [
-      {
-        role: "system",
-        content: systemContent,
-      },
-      ...history,
+    const messages: ApiMessage[] = [
+      { role: "system", content: systemContent },
+      ...history.map((m) => ({ role: m.role, content: m.content }) as ApiMessage),
       { role: "user", content: userPrompt },
     ];
 
+    const useTools = Boolean(options?.tools?.length && options.executeTool);
+    const maxRounds = options?.maxToolRounds ?? 4;
+    const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+
     try {
-      const resp = await fetch(`${this.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      let reply = "⚠️ AI 返回了空内容。";
+
+      for (let round = 0; round < (useTools ? maxRounds : 1); round++) {
+        const body: Record<string, unknown> = {
           model: this.model,
           messages,
           temperature: 0.7,
-        }),
-        signal: AbortSignal.timeout(60000),
-      });
+        };
+        if (useTools) {
+          body.tools = options!.tools;
+          body.tool_choice = "auto";
+        }
 
-      if (!resp.ok) {
-        const errorText = await resp.text();
-        console.error(`[AI] 接口错误: ${resp.status} - ${errorText}`);
-        return `⚠️ 调用 AI API 异常 (${resp.status})，请检查 API Key 或配置。`;
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          console.error(`[AI] 接口错误: ${resp.status} - ${errorText}`);
+          return `⚠️ 调用 AI API 异常 (${resp.status})，请检查 API Key 或配置。`;
+        }
+
+        const data = (await resp.json()) as {
+          choices?: Array<{
+            message: {
+              role?: string;
+              content?: string | null;
+              tool_calls?: ApiToolCall[];
+            };
+          }>;
+        };
+
+        const msg = data.choices?.[0]?.message;
+        const toolCalls = msg?.tool_calls;
+        if (useTools && toolCalls?.length) {
+          messages.push({
+            role: "assistant",
+            content: msg?.content ?? null,
+            tool_calls: toolCalls,
+          });
+          for (const call of toolCalls) {
+            let args: Record<string, unknown> = {};
+            try {
+              args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+            } catch {
+              const bad = { ok: false, message: "invalid arguments JSON" };
+              messages.push({
+                role: "tool",
+                tool_call_id: call.id,
+                content: JSON.stringify(bad),
+              });
+              continue;
+            }
+            const result = await options!.executeTool!(call.function.name, args);
+            messages.push({
+              role: "tool",
+              tool_call_id: call.id,
+              content: JSON.stringify(result),
+            });
+          }
+          if (round === maxRounds - 1) {
+            reply = "⚠️ 待办工具调用轮次过多，请用 /todo list 重试。";
+            break;
+          }
+          continue;
+        }
+
+        reply = msg?.content?.trim() || "⚠️ AI 返回了空内容。";
+        break;
       }
-
-      const data = (await resp.json()) as {
-        choices?: Array<{ message: { content: string } }>;
-      };
-
-      const reply = data.choices?.[0]?.message?.content?.trim() || "⚠️ AI 返回了空内容。";
 
       history.push({ role: "user", content: userPrompt });
       history.push({ role: "assistant", content: reply });

@@ -19,7 +19,8 @@ import { startDailyArchiveScheduler } from "./scheduler";
 import { handleTodoMessage } from "../todos/commands";
 import { recordUserInbound, getTodosSettings } from "../todos/settings";
 import { processCatchupForUser, startTodosReminderScheduler } from "../todos/reminders";
-import { TODOS_TIPS_SYSTEM } from "../todos/tips";
+import { TODOS_TIPS_SYSTEM, TODOS_TOOLS_SYSTEM } from "../todos/tips";
+import { TODO_TOOL_DEFINITIONS, executeTodoTool } from "../todos/tools";
 import { listTodos } from "../todos/store";
 import {
   claimBotToken,
@@ -396,11 +397,19 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       const lines = open.map((t) => `- ${t.title}${t.remindAt ? ` @ ${t.remindAt}` : ""}`);
       systemExtra =
         TODOS_TIPS_SYSTEM +
-        "\n你支持极简「待办」（模块 id: todos）。用户可用自然语言或 /todo 创建/完成/列表。" +
+        "\n" +
+        TODOS_TOOLS_SYSTEM +
+        "\n你支持极简「待办」（模块 id: todos）。用户可用自然语言或 /todo·@todo 创建/完成/列表。" +
         " v1 仅单次提醒，无每天/每周重复，不同步 Google Tasks。" +
         (lines.length ? `\n当前未完成待办：\n${lines.join("\n")}` : "\n当前无未完成待办。");
     }
-    const reply = await ds.chat(fromUser, text, { systemExtra });
+    const reply = await ds.chat(fromUser, text, {
+      systemExtra,
+      tools: todosSettings.todosEnabled ? [...TODO_TOOL_DEFINITIONS] : undefined,
+      executeTool: todosSettings.todosEnabled
+        ? (name, args) => executeTodoTool(binding.userId, name, args)
+        : undefined,
+    });
     insertMessage({
       userId: binding.userId,
       wechatUserId: fromUser,
