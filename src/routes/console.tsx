@@ -19,6 +19,7 @@ import {
   type Message,
   type Todo,
 } from "@/lib/api";
+import { formatTodoWhen, groupTodosByDate, todoGroupKey } from "@/lib/todo-groups";
 
 export const Route = createFileRoute("/console")({
   beforeLoad: async () => {
@@ -499,6 +500,8 @@ function TodosPanel({ visible: _visible }: { visible: boolean }) {
   const enabled = settingsQ.data?.settings.todosEnabled ?? true;
   const tips = settingsQ.data?.tips ?? todosQ.data?.tips ?? "";
   const todos = todosQ.data?.todos ?? [];
+  const timeZone = settingsQ.data?.settings.timezone || "Asia/Shanghai";
+  const buckets = groupTodosByDate(todos, { timeZone });
 
   return (
     <section className="panel" aria-labelledby="todos-heading">
@@ -507,7 +510,7 @@ function TodosPanel({ visible: _visible }: { visible: boolean }) {
           <h2 id="todos-heading" className="type-app-title">
             待办
           </h2>
-          <p className="type-meta mt-1">极简单次提醒 · 模块默认开启 · 与微信 ClawBot 对话也可创建</p>
+          <p className="type-meta mt-1">按日期分组 · 极简单次提醒 · 与微信 ClawBot 对话也可创建</p>
         </div>
         <button
           type="button"
@@ -582,46 +585,62 @@ function TodosPanel({ visible: _visible }: { visible: boolean }) {
           <p className="type-meta mt-1">在微信说「明天 9 点提醒我…」或在上方添加</p>
         </div>
       ) : (
-        <ul className="timeline mt-4">
-          {todos.map((t: Todo) => (
-            <li key={t.id} className="timeline-row">
-              <div className="timeline-meta">
-                <span className="timeline-role">待办</span>
-                {t.remindAt ? (
-                  <time className="tabular" dateTime={t.remindAt}>
-                    {new Date(t.remindAt).toLocaleString("zh-CN", { hour12: false })}
-                  </time>
-                ) : (
-                  <span className="type-meta">无提醒</span>
-                )}
-              </div>
-              <p className="timeline-body">{t.title}</p>
-              <div className="actions mt-2">
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  disabled={completeM.isPending}
-                  onClick={() => completeM.mutate(t.id)}
-                >
-                  完成
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  disabled={deleteM.isPending}
-                  onClick={() => {
-                    if (!window.confirm(`删除待办「${t.title}」？`)) return;
-                    deleteM.mutate(t.id);
-                  }}
-                >
-                  删除
-                </button>
-              </div>
-            </li>
+        <div className="todo-groups mt-4">
+          {buckets.map((bucket) => (
+            <section key={bucket.id} className="todo-group" aria-labelledby={`todo-bucket-${bucket.id}`}>
+              <h3 id={`todo-bucket-${bucket.id}`} className="todo-group-title">
+                {bucket.label}
+                <span className="todo-group-count tabular">{bucket.items.length}</span>
+              </h3>
+              <ul className="todo-list">
+                {bucket.items.map((t: Todo) => {
+                  const key = todoGroupKey(t);
+                  const groupedOnDue = Boolean(t.dueAt);
+                  const showRemindHint =
+                    groupedOnDue && t.remindAt && t.remindAt !== t.dueAt;
+                  return (
+                    <li key={t.id} className="todo-row">
+                      <button
+                        type="button"
+                        className="todo-check"
+                        aria-label={`完成「${t.title}」`}
+                        disabled={completeM.isPending || !enabled}
+                        onClick={() => completeM.mutate(t.id)}
+                      />
+                      <div className="todo-main">
+                        <p className="todo-title">{t.title}</p>
+                        <div className="todo-meta type-meta">
+                          {key ? (
+                            <time dateTime={key}>{formatTodoWhen(key, timeZone)}</time>
+                          ) : (
+                            <span>无日期</span>
+                          )}
+                          {showRemindHint ? (
+                            <span className="todo-meta-extra">
+                              提醒 {formatTodoWhen(t.remindAt!, timeZone)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-ghost todo-delete"
+                        disabled={deleteM.isPending}
+                        onClick={() => {
+                          if (!window.confirm(`删除待办「${t.title}」？`)) return;
+                          deleteM.mutate(t.id);
+                        }}
+                      >
+                        删除
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
 }
-

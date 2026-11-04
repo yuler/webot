@@ -1156,3 +1156,89 @@
   display: grid;
   gap: 12px;
 }
+
+/* ---------- Todos (console date groups) ---------- */
+
+.todo-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.todo-group-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-gray);
+}
+
+.todo-group-count {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.todo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid var(--color-line);
+  padding: 10px 0;
+}
+
+.todo-check {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-gray);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.todo-check:hover:not(:disabled) {
+  border-color: var(--color-ink);
+}
+
+.todo-check:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.todo-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.todo-title {
+  margin: 0;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.todo-meta {
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.todo-meta-extra {
+  opacity: 0.75;
+}
+
+.todo-delete {
+  flex: 0 0 auto;
+  align-self: center;
+}
