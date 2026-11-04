@@ -117,19 +117,19 @@ if (gate.ok || gate.reason !== "quota") throw new Error("expected quota gate");
 
 // NL create
 updateTodosSettings(user.id, { proactiveSentInWindow: 0 });
-const nl = handleTodoMessage(user.id, "明天 10:00 提醒我买牛奶");
+const nl = await handleTodoMessage(user.id, "明天 10:00 提醒我买牛奶");
 if (!nl.handled) throw new Error("NL should handle");
 if (!nl.reply.includes("买牛奶")) throw new Error("reply should confirm title");
 if (!nl.reply.includes("10")) throw new Error("reply should confirm absolute time");
 if (!nl.reply.includes("24")) throw new Error("reply should include tips");
 
-const done = handleTodoMessage(user.id, "/todo done 交社保");
+const done = await handleTodoMessage(user.id, "/todo done 交社保");
 if (!done.handled || !done.reply.includes("完成")) throw new Error("done failed");
 if (completeTodo(user.id, todo.id)?.status !== "done" && listTodos(user.id, { status: "open" }).some(t => t.id === todo.id)) {
   throw new Error("todo should be done");
 }
 
-const off = handleTodoMessage(user.id, "/todo off");
+const off = await handleTodoMessage(user.id, "/todo off");
 if (!off.handled) throw new Error("off failed");
 if (getTodosSettings(user.id).todosEnabled !== false) throw new Error("should be disabled");
 
@@ -211,15 +211,15 @@ if (!still || still.status !== "pending") {
   throw new Error("disabled tick must keep reminder pending, got " + JSON.stringify(still));
 }
 
-const addOff = handleTodoMessage(user.id, "/todo add 不应创建");
+const addOff = await handleTodoMessage(user.id, "/todo add 不应创建");
 if (!addOff.handled || !addOff.reply.includes("关闭")) {
   throw new Error("slash add while off should refuse: " + JSON.stringify(addOff));
 }
-const doneOff = handleTodoMessage(user.id, "/todo done 关掉后");
+const doneOff = await handleTodoMessage(user.id, "/todo done 关掉后");
 if (!doneOff.handled || !doneOff.reply.includes("关闭")) {
   throw new Error("slash done while off should refuse: " + JSON.stringify(doneOff));
 }
-const listOff = handleTodoMessage(user.id, "/todo list");
+const listOff = await handleTodoMessage(user.id, "/todo list");
 if (!listOff.handled) throw new Error("list while off should still work");
 
 const openBefore = (await import("../src/todos/store.ts")).listTodos(user.id, { status: "open" });

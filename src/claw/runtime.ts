@@ -319,8 +319,11 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       console.warn(`[Claw:${ownerUserId.slice(0, 8)}] todos catch-up failed:`, err);
     }
 
-    // 待办: /todo commands + heuristic NL (before AI / rate limit).
-    const todoHandled = handleTodoMessage(binding.userId, text);
+    // 待办: /todo commands + NL (semantic multi-split via DeepSeek JSON; before AI / rate limit).
+    const dsForTodos = getDeepseek();
+    const todoHandled = await handleTodoMessage(binding.userId, text, {
+      completeJson: (system, user) => dsForTodos.completeJson(system, user),
+    });
     if (todoHandled.handled) {
       insertMessage({
         userId: binding.userId,

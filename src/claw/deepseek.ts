@@ -110,4 +110,65 @@ export class DeepSeekBot {
       return "⚠️ 抱歉，当前处理回复超时或发生网络异常，请重试。";
     }
   }
+
+  /**
+   * One-shot JSON completion that does NOT touch chat history.
+   * Prefers response_format json_object; falls back to prompt-only if rejected.
+   * Returns raw content string, or null on missing key / HTTP / timeout / empty.
+   */
+  public async completeJson(
+    system: string,
+    user: string,
+    options?: { temperature?: number; timeoutMs?: number },
+  ): Promise<string | null> {
+    if (!this.apiKey) return null;
+
+    const temperature = options?.temperature ?? 0.1;
+    const timeoutMs = options?.timeoutMs ?? 20_000;
+    const messages: ChatMessage[] = [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ];
+    const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+    const headers = {
+      Authorization: `Bearer ${this.apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    const post = async (body: Record<string, unknown>) => {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      return resp;
+    };
+
+    try {
+      let resp = await post({
+        model: this.model,
+        messages,
+        temperature,
+        response_format: { type: "json_object" },
+      });
+      // Some gateways reject response_format — retry without it.
+      if (!resp.ok && (resp.status === 400 || resp.status === 422)) {
+        resp = await post({ model: this.model, messages, temperature });
+      }
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error(`[AI] completeJson error: ${resp.status} - ${errorText}`);
+        return null;
+      }
+      const data = (await resp.json()) as {
+        choices?: Array<{ message: { content: string } }>;
+      };
+      const content = data.choices?.[0]?.message?.content?.trim();
+      return content || null;
+    } catch (err: any) {
+      console.error("[AI] completeJson failed:", err?.message || err);
+      return null;
+    }
+  }
 }
