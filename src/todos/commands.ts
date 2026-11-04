@@ -1,5 +1,5 @@
 /**
- * WeChat `/todo` light commands + heuristic NL intents for 待办.
+ * WeChat `/todo` light commands + heuristic / semantic NL intents for 待办.
  * Recurrence is v1 single-shot only.
  */
 
@@ -13,8 +13,18 @@ import {
 import { getTodosSettings, updateTodosSettings } from "./settings";
 import { formatAbsoluteZh, parseRemindAt, stripTimePhrases } from "./time";
 import { TODOS_TIPS_SHORT } from "./tips";
+import {
+  type JsonCompleter,
+  type TodoSplitItem,
+  splitUtteranceIntoTodos,
+} from "./semantic-split";
 
 export type TodoCommandResult = { handled: true; reply: string } | { handled: false };
+
+export type TodoCommandOptions = {
+  /** Injected one-shot JSON completer for NL semantic multi-todo split. */
+  completeJson?: JsonCompleter;
+};
 
 function helpText(): string {
   return (
@@ -60,6 +70,44 @@ function createWithConfirm(
     );
   }
   return `✅ 已创建待办「${todo.title}」（未设置提醒）。可用「明天 9 点提醒我 ${todo.title}」补提醒。`;
+}
+
+function createManyWithConfirm(userId: string, items: TodoSplitItem[]): string {
+  const created: Array<{ title: string; remindAt: string | null }> = [];
+  for (const item of items) {
+    const remindAt = item.remindAtText ? parseRemindAt(item.remindAtText) : null;
+    const clean = item.title.trim() || "未命名待办";
+    const { todo } = createTodo({
+      userId,
+      title: clean,
+      remindAt,
+      source: "wechat",
+    });
+    created.push({ title: todo.title, remindAt });
+  }
+
+  if (created.length === 1) {
+    const only = created[0]!;
+    if (only.remindAt) {
+      return (
+        `✅ 已创建待办「${only.title}」\n` +
+        `提醒时间：${formatAbsoluteZh(only.remindAt)}（请核对；不对可以说「改成…」）\n\n` +
+        TODOS_TIPS_SHORT
+      );
+    }
+    return (
+      `✅ 已创建待办「${only.title}」（未设置提醒）。` +
+      `可用「明天 9 点提醒我 ${only.title}」补提醒。`
+    );
+  }
+
+  const lines = created.map((t) => {
+    if (t.remindAt) {
+      return `✅ 已创建待办「${t.title}」· 提醒 ${formatAbsoluteZh(t.remindAt)}`;
+    }
+    return `✅ 已创建待办「${t.title}」（未设置提醒）`;
+  });
+  return `已拆成 ${created.length} 条待办：\n${lines.join("\n")}\n\n${TODOS_TIPS_SHORT}`;
 }
 
 /** `/todo …` slash commands. */
@@ -116,11 +164,27 @@ export function tryTodoSlashCommand(userId: string, text: string): TodoCommandRe
   return { handled: true, reply: createWithConfirm(userId, title, remindAt) };
 }
 
+function heuristicCreate(userId: string, trimmed: string): TodoCommandResult {
+  const remindAt = parseRemindAt(trimmed);
+  let title = stripTimePhrases(trimmed);
+  title = title
+    .replace(/^待办\s*/, "")
+    .replace(/^(请)?(帮我)?/, "")
+    .trim();
+  if (!title || title.length < 1) title = "未命名待办";
+  return { handled: true, reply: createWithConfirm(userId, title, remindAt) };
+}
+
 /**
- * Heuristic NL (no LLM). Returns handled when confident.
+ * NL intents. Create path may call injected JSON completer for semantic multi-split;
+ * on failure / empty / no completer → current single-todo heuristic.
  * Does nothing if module disabled (except enabling phrases).
  */
-export function tryTodoNaturalLanguage(userId: string, text: string): TodoCommandResult {
+export async function tryTodoNaturalLanguage(
+  userId: string,
+  text: string,
+  options?: TodoCommandOptions,
+): Promise<TodoCommandResult> {
   const trimmed = text.trim();
   if (!trimmed) return { handled: false };
 
@@ -175,20 +239,32 @@ export function tryTodoNaturalLanguage(userId: string, text: string): TodoComman
     /^待办\s+/.test(trimmed) ||
     (parseRemindAt(trimmed) != null && /交|买|取|打|开会|电话|邮件|社保/.test(trimmed));
 
-  if (!looksCreate) return { handled: false };
+  // Compound task list without explicit「提醒我」— e.g. 「把 A：…，以及 B」.
+  // Only accept when the model returns items; do not heuristic-create a mega-title.
+  const looksCompoundCreate =
+    !looksCreate &&
+    /(以及|还有|另外)/.test(trimmed) &&
+    /(更新|加上?|改成?|做成?|写|创建|提醒|看待办|待办)/.test(trimmed);
 
-  const remindAt = parseRemindAt(trimmed);
-  let title = stripTimePhrases(trimmed);
-  title = title
-    .replace(/^待办\s*/, "")
-    .replace(/^(请)?(帮我)?/, "")
-    .trim();
-  if (!title || title.length < 1) title = "未命名待办";
-  return { handled: true, reply: createWithConfirm(userId, title, remindAt) };
+  if (!looksCreate && !looksCompoundCreate) return { handled: false };
+
+  if (options?.completeJson) {
+    const items = await splitUtteranceIntoTodos(trimmed, options.completeJson);
+    if (items && items.length > 0) {
+      return { handled: true, reply: createManyWithConfirm(userId, items) };
+    }
+  }
+
+  if (looksCompoundCreate) return { handled: false };
+  return heuristicCreate(userId, trimmed);
 }
 
-export function handleTodoMessage(userId: string, text: string): TodoCommandResult {
+export async function handleTodoMessage(
+  userId: string,
+  text: string,
+  options?: TodoCommandOptions,
+): Promise<TodoCommandResult> {
   const slash = tryTodoSlashCommand(userId, text);
   if (slash.handled) return slash;
-  return tryTodoNaturalLanguage(userId, text);
+  return tryTodoNaturalLanguage(userId, text, options);
 }
