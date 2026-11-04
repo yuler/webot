@@ -16,6 +16,11 @@ import { onChatMemoryReset, onChatMemoryResetAll } from "../chat-memory";
 import { DeepSeekBot } from "./deepseek";
 import { rateLimiter } from "./rate-limit";
 import { startDailyArchiveScheduler } from "./scheduler";
+import { handleTodoMessage } from "../todos/commands";
+import { recordUserInbound, getTodosSettings } from "../todos/settings";
+import { processCatchupForUser, startTodosReminderScheduler } from "../todos/reminders";
+import { TODOS_TIPS_SYSTEM } from "../todos/tips";
+import { listTodos } from "../todos/store";
 import {
   claimBotToken,
   clearClawCredentials,
@@ -305,6 +310,36 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       continue;
     }
 
+    // Refresh heuristic ClawBot proactive window + store context_token for 待办 reminders.
+    recordUserInbound(binding.userId, { wechatUserId: fromUser, contextToken });
+    // Catch up at most one skipped reminder per todo (counts toward heuristic quota).
+    try {
+      await processCatchupForUser(binding.userId);
+    } catch (err) {
+      console.warn(`[Claw:${ownerUserId.slice(0, 8)}] todos catch-up failed:`, err);
+    }
+
+    // 待办: /todo commands + heuristic NL (before AI / rate limit).
+    const todoHandled = handleTodoMessage(binding.userId, text);
+    if (todoHandled.handled) {
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "user",
+        content: text,
+        wechatMessageId: msgId || null,
+      });
+      insertMessage({
+        userId: binding.userId,
+        wechatUserId: fromUser,
+        role: "assistant",
+        content: todoHandled.reply,
+      });
+      // Do not inject into DeepSeek chat-memory — todo UX is structured, not free chat.
+      await ilink.sendMessage(botToken, fromUser, contextToken, todoHandled.reply);
+      continue;
+    }
+
     // /reset clears chat memory + soft-deletes console history only.
     // It does NOT call rateLimiter.resetUser — daily quota still applies until 04:00 archive.
     if (text === "/reset" || text === "/clear") {
@@ -351,7 +386,18 @@ async function handleMessages(ownerUserId: string, msgs: ilink.WechatMessage[]):
       content: text,
       wechatMessageId: msgId || null,
     });
-    const reply = await ds.chat(fromUser, text);
+    const todosSettings = getTodosSettings(binding.userId);
+    let systemExtra = "";
+    if (todosSettings.todosEnabled) {
+      const open = listTodos(binding.userId, { status: "open", limit: 8 });
+      const lines = open.map((t) => `- ${t.title}${t.remindAt ? ` @ ${t.remindAt}` : ""}`);
+      systemExtra =
+        TODOS_TIPS_SYSTEM +
+        "\n你支持极简「待办」（模块 id: todos）。用户可用自然语言或 /todo 创建/完成/列表。" +
+        " v1 仅单次提醒，无每天/每周重复，不同步 Google Tasks。" +
+        (lines.length ? `\n当前未完成待办：\n${lines.join("\n")}` : "\n当前无未完成待办。");
+    }
+    const reply = await ds.chat(fromUser, text, { systemExtra });
     insertMessage({
       userId: binding.userId,
       wechatUserId: fromUser,
@@ -450,6 +496,7 @@ export function startClawRuntime(): void {
   runtimeStarted = true;
   getDeepseek();
   startDailyArchiveScheduler();
+  startTodosReminderScheduler();
   if (skipBot()) {
     console.log("[Claw] WEBOT_SKIP_BOT=1 — per-user workers idle until enabled");
     return;

@@ -139,3 +139,92 @@ export async function resetBotSession() {
     hasQr?: boolean;
   }>(await apiFetch("/api/bot/reset", { method: "POST", credentials: "include" }));
 }
+
+export type Todo = {
+  id: string;
+  userId: string;
+  title: string;
+  notes: string | null;
+  dueAt: string | null;
+  remindAt: string | null;
+  status: string;
+  completedAt: string | null;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+export type TodosSettings = {
+  userId: string;
+  todosEnabled: boolean;
+  timezone: string;
+  tipsAckedAt: string | null;
+  lastUserInboundAt: string | null;
+  proactiveSentInWindow: number;
+  windowStartedAt: string | null;
+  lastContextToken: string | null;
+  lastWechatUserId: string | null;
+  updatedAt: string;
+};
+
+export async function fetchTodos(status: "open" | "done" | "all" = "open") {
+  return parseJson<{ todos: Todo[]; tips: string }>(
+    await apiFetch(`/api/todos?status=${status}`, { credentials: "include", cache: "no-store" }),
+  );
+}
+
+export async function createTodoApi(input: {
+  title: string;
+  notes?: string | null;
+  dueAt?: string | null;
+  remindAt?: string | null;
+}) {
+  return parseJson<{ todo: Todo; tips: string }>(
+    await apiFetch("/api/todos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      credentials: "include",
+    }),
+  );
+}
+
+export async function completeTodoApi(id: string) {
+  return parseJson<{ todo: Todo }>(
+    await apiFetch(`/api/todos/${encodeURIComponent(id)}/complete`, {
+      method: "POST",
+      credentials: "include",
+    }),
+  );
+}
+
+export async function deleteTodoApi(id: string) {
+  return parseJson<{ ok: true; todo: Todo }>(
+    await apiFetch(`/api/todos/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      credentials: "include",
+    }),
+  );
+}
+
+export async function fetchTodosSettings() {
+  return parseJson<{ settings: TodosSettings; tips: string }>(
+    await apiFetch("/api/settings/todos", { credentials: "include", cache: "no-store" }),
+  );
+}
+
+export async function patchTodosSettings(input: {
+  todosEnabled?: boolean;
+  timezone?: string;
+  ackTips?: boolean;
+}) {
+  return parseJson<{ settings: TodosSettings; tips: string }>(
+    await apiFetch("/api/settings/todos", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      credentials: "include",
+    }),
+  );
+}

@@ -32,6 +32,16 @@ import {
 } from "./auth/bindings";
 import { listMessagesForUser, softDeleteMessagesForUser } from "./auth/messages";
 import { resetChatMemory } from "./chat-memory";
+import {
+  completeTodo,
+  createTodo,
+  getTodoForUser,
+  listTodos,
+  softDeleteTodo,
+  updateTodo,
+} from "./todos/store";
+import { getTodosSettings, updateTodosSettings } from "./todos/settings";
+import { TODOS_TIPS_CONSOLE } from "./todos/tips";
 
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return Response.json(data, {
@@ -318,6 +328,103 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         const binding = getBindingForUser(user.id);
         if (binding?.wechatUserId) resetChatMemory(binding.wechatUserId);
         return json({ ok: true, deleted });
+      }
+
+      // --- Todos (待办) ---
+      if (pathname === "/api/settings/todos" && req.method === "GET") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const settings = getTodosSettings(user.id);
+        return json({ settings, tips: TODOS_TIPS_CONSOLE });
+      }
+
+      if (pathname === "/api/settings/todos" && req.method === "PATCH") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const body = await readJson(req);
+        const patch: { todosEnabled?: boolean; timezone?: string; tipsAckedAt?: string | null } = {};
+        if (typeof body?.todosEnabled === "boolean") patch.todosEnabled = body.todosEnabled;
+        if (typeof body?.timezone === "string" && body.timezone.trim()) patch.timezone = body.timezone.trim();
+        if (body?.ackTips === true) patch.tipsAckedAt = new Date().toISOString();
+        const settings = updateTodosSettings(user.id, patch);
+        return json({ settings, tips: TODOS_TIPS_CONSOLE });
+      }
+
+      if (pathname === "/api/todos" && req.method === "GET") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const status = (url.searchParams.get("status") || "open") as "open" | "done" | "cancelled" | "all";
+        const limit = Math.min(Number(url.searchParams.get("limit") || 100), 500);
+        return json({ todos: listTodos(user.id, { status, limit }), tips: TODOS_TIPS_CONSOLE });
+      }
+
+      if (pathname === "/api/todos" && req.method === "POST") {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const body = await readJson(req);
+        const title = String(body?.title || "").trim();
+        if (!title) return json({ error: "title required" }, 400);
+        const remindAt = body?.remindAt ? String(body.remindAt) : null;
+        const dueAt = body?.dueAt ? String(body.dueAt) : null;
+        const notes = body?.notes != null ? String(body.notes) : null;
+        const { todo, reminder } = createTodo({
+          userId: user.id,
+          title,
+          notes,
+          dueAt,
+          remindAt,
+          source: "console",
+        });
+        return json({ todo, reminder, tips: TODOS_TIPS_CONSOLE }, 201);
+      }
+
+      const todoMatch = pathname.match(/^\/api\/todos\/([^/]+)(\/complete)?$/);
+      if (todoMatch) {
+        const user = requireUser(req);
+        if (user instanceof Response) return user;
+        const todoId = decodeURIComponent(todoMatch[1]!);
+        const isComplete = Boolean(todoMatch[2]);
+
+        if (isComplete && req.method === "POST") {
+          const todo = completeTodo(user.id, todoId);
+          if (!todo) return json({ error: "not found" }, 404);
+          return json({ todo });
+        }
+
+        if (!isComplete && req.method === "PATCH") {
+          const body = await readJson(req);
+          const patch: {
+            title?: string;
+            notes?: string | null;
+            dueAt?: string | null;
+            remindAt?: string | null;
+            status?: "open" | "done" | "cancelled";
+          } = {};
+          if (typeof body?.title === "string") patch.title = body.title;
+          if (body?.notes !== undefined) patch.notes = body.notes == null ? null : String(body.notes);
+          if (body?.dueAt !== undefined) patch.dueAt = body.dueAt == null ? null : String(body.dueAt);
+          if (body?.remindAt !== undefined) {
+            patch.remindAt = body.remindAt == null ? null : String(body.remindAt);
+          }
+          if (typeof body?.status === "string") {
+            patch.status = body.status as "open" | "done" | "cancelled";
+          }
+          const todo = updateTodo(user.id, todoId, patch);
+          if (!todo) return json({ error: "not found" }, 404);
+          return json({ todo });
+        }
+
+        if (!isComplete && req.method === "DELETE") {
+          const todo = softDeleteTodo(user.id, todoId);
+          if (!todo) return json({ error: "not found" }, 404);
+          return json({ ok: true, todo });
+        }
+
+        if (!isComplete && req.method === "GET") {
+          const todo = getTodoForUser(user.id, todoId);
+          if (!todo) return json({ error: "not found" }, 404);
+          return json({ todo });
+        }
       }
 
       // Prod UI: serve hashed assets from disk first (Nitro standard asset map

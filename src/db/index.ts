@@ -105,6 +105,55 @@ export function ensureSchema(): void {
     // ignore
   }
 
+  // --- Todos module (待办) ---
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS user_module_settings (
+      user_id TEXT PRIMARY KEY NOT NULL REFERENCES users(id),
+      todos_enabled INTEGER NOT NULL DEFAULT 1,
+      timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai',
+      tips_acked_at TEXT,
+      last_user_inbound_at TEXT,
+      proactive_sent_in_window INTEGER NOT NULL DEFAULT 0,
+      window_started_at TEXT,
+      last_context_token TEXT,
+      last_wechat_user_id TEXT,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS todos (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      title TEXT NOT NULL,
+      notes TEXT,
+      due_at TEXT,
+      remind_at TEXT,
+      status TEXT NOT NULL DEFAULT 'open',
+      completed_at TEXT,
+      source TEXT NOT NULL DEFAULT 'api',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS todos_user_id_idx ON todos(user_id);
+    CREATE INDEX IF NOT EXISTS todos_status_idx ON todos(status);
+    CREATE INDEX IF NOT EXISTS todos_remind_at_idx ON todos(remind_at);
+    CREATE TABLE IF NOT EXISTS todo_reminders (
+      id TEXT PRIMARY KEY NOT NULL,
+      todo_id TEXT NOT NULL REFERENCES todos(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      scheduled_at TEXT NOT NULL,
+      sent_at TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      skip_reason TEXT,
+      attempt INTEGER NOT NULL DEFAULT 0,
+      catchup_used INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS todo_reminders_todo_id_idx ON todo_reminders(todo_id);
+    CREATE INDEX IF NOT EXISTS todo_reminders_user_id_idx ON todo_reminders(user_id);
+    CREATE INDEX IF NOT EXISTS todo_reminders_status_sched_idx ON todo_reminders(status, scheduled_at);
+  `);
+
   try {
     sqlite.exec(`DROP TABLE IF EXISTS memberships;`);
     sqlite.exec(`DROP TABLE IF EXISTS tenants;`);

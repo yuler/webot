@@ -658,7 +658,11 @@
 
 /* Phones: only the selected tab pane is shown. */
 .console-grid[data-tab="setup"] .console-pane--messages,
-.console-grid[data-tab="messages"] .console-pane--setup {
+.console-grid[data-tab="setup"] .console-pane--todos,
+.console-grid[data-tab="messages"] .console-pane--setup,
+.console-grid[data-tab="messages"] .console-pane--todos,
+.console-grid[data-tab="todos"] .console-pane--setup,
+.console-grid[data-tab="todos"] .console-pane--messages {
   display: none;
 }
 
@@ -676,6 +680,11 @@
 
   .console-grid[data-tab] .console-pane {
     display: block;
+  }
+
+  /* 待办 spans full width under setup + messages on desktop. */
+  .console-pane--todos {
+    grid-column: 1 / -1;
   }
 }
 

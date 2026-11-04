@@ -43,7 +43,11 @@ export class DeepSeekBot {
     return this.histories.get(userId) || [];
   }
 
-  public async chat(userId: string, userPrompt: string): Promise<string> {
+  public async chat(
+    userId: string,
+    userPrompt: string,
+    options?: { systemExtra?: string },
+  ): Promise<string> {
     if (!this.apiKey) {
       return "⚠️ 服务端还没有配置 AI 模型的 API_KEY，暂时无法回复。";
     }
@@ -54,10 +58,14 @@ export class DeepSeekBot {
       this.histories.set(userId, history);
     }
 
+    const systemContent = [this.getSystemPrompt(), options?.systemExtra?.trim()]
+      .filter(Boolean)
+      .join("\n\n");
+
     const messages: ChatMessage[] = [
       {
         role: "system",
-        content: this.getSystemPrompt(),
+        content: systemContent,
       },
       ...history,
       { role: "user", content: userPrompt },
