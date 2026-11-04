@@ -25,7 +25,7 @@ export function AppBar() {
 
   return (
     <header className="app-bar">
-      <nav className="app-bar-nav" aria-label="主导航">
+      <div className="app-bar-inner container">
         {onHome ? (
           <span className="app-bar-home" aria-label="WeBot 首页">
             {brand}
@@ -35,35 +35,35 @@ export function AppBar() {
             {brand}
           </Link>
         )}
-      </nav>
-      <div className="app-bar-end">
-        {loggedIn ? (
-          <>
+        <nav className="app-bar-end" aria-label="主导航">
+          {loggedIn ? (
+            <>
+              <Link
+                to="/todos"
+                className={`app-bar-cta type-kicker${onTodos ? " is-active" : ""}`}
+                aria-current={onTodos ? "page" : undefined}
+              >
+                待办
+              </Link>
+              <Link
+                to="/console"
+                className={`app-bar-cta type-kicker${onConsole ? " is-active" : ""}`}
+                aria-current={onConsole ? "page" : undefined}
+              >
+                控制台
+              </Link>
+            </>
+          ) : (
             <Link
-              to="/todos"
-              className={`app-bar-cta type-kicker${onTodos ? " is-active" : ""}`}
-              aria-current={onTodos ? "page" : undefined}
+              to="/login"
+              className={`app-bar-cta type-kicker${onLogin ? " is-active" : ""}`}
+              aria-current={onLogin ? "page" : undefined}
             >
-              待办
+              登录
             </Link>
-            <Link
-              to="/console"
-              className={`app-bar-cta type-kicker${onConsole ? " is-active" : ""}`}
-              aria-current={onConsole ? "page" : undefined}
-            >
-              控制台
-            </Link>
-          </>
-        ) : (
-          <Link
-            to="/login"
-            className={`app-bar-cta type-kicker${onLogin ? " is-active" : ""}`}
-            aria-current={onLogin ? "page" : undefined}
-          >
-            登录
-          </Link>
-        )}
-        <ThemeSwitch />
+          )}
+          <ThemeSwitch />
+        </nav>
       </div>
     </header>
   );
