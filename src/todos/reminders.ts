@@ -49,13 +49,9 @@ async function deliverReminder(
   }
 
   const settings = getTodosSettings(reminder.userId);
+  // Module off: leave reminder pending so it can fire after re-enable.
   if (!settings.todosEnabled) {
-    markReminder(reminder.id, {
-      status: "failed",
-      skipReason: "todos_disabled",
-      attempt: reminder.attempt + 1,
-    });
-    return { ok: false, reason: "todos_disabled", status: "failed" };
+    return { ok: false, reason: "todos_disabled" };
   }
 
   const gate = canSendProactive(reminder.userId);

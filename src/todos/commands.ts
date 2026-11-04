@@ -84,10 +84,17 @@ export function tryTodoSlashCommand(userId: string, text: string): TodoCommandRe
     updateTodosSettings(userId, { todosEnabled: false });
     return { handled: true, reply: "已关闭待办模块。再开可用 /todo on。" };
   }
+
+  // Align with console: reads/list OK while off; writes require module on.
+  const settings = getTodosSettings(userId);
+  const disabledMsg =
+    "待办模块已关闭，无法修改。可用 /todo on 重新开启（列表仍可用：/todo list）。";
+
   if (v === "list" || v === "ls" || v === "列表") {
     return { handled: true, reply: listText(userId) };
   }
   if (v === "done" || v === "complete" || v === "完成") {
+    if (!settings.todosEnabled) return { handled: true, reply: disabledMsg };
     if (!arg) return { handled: true, reply: "请指定要完成的待办标题关键字，例如：/todo done 买牛奶" };
     const hit = findOpenTodoByTitleHint(userId, arg);
     if (!hit) return { handled: true, reply: `没找到匹配「${arg}」的未完成待办。` };
@@ -95,13 +102,15 @@ export function tryTodoSlashCommand(userId: string, text: string): TodoCommandRe
     return { handled: true, reply: `✅ 已完成待办「${hit.title}」。` };
   }
   if (v === "add" || v === "new" || v === "创建") {
+    if (!settings.todosEnabled) return { handled: true, reply: disabledMsg };
     if (!arg) return { handled: true, reply: "请附上标题，例如：/todo add 交社保 明天 9:00" };
     const remindAt = parseRemindAt(arg);
     const title = stripTimePhrases(arg) || arg;
     return { handled: true, reply: createWithConfirm(userId, title, remindAt) };
   }
 
-  // `/todo 标题 明天9点` shorthand
+  // `/todo 标题 明天9点` shorthand (write)
+  if (!settings.todosEnabled) return { handled: true, reply: disabledMsg };
   const remindAt = parseRemindAt(body);
   const title = stripTimePhrases(body) || body;
   return { handled: true, reply: createWithConfirm(userId, title, remindAt) };

@@ -361,6 +361,9 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
       if (pathname === "/api/todos" && req.method === "POST") {
         const user = requireUser(req);
         if (user instanceof Response) return user;
+        if (!getTodosSettings(user.id).todosEnabled) {
+          return json({ error: "todos module disabled", code: "todos_disabled" }, 403);
+        }
         const body = await readJson(req);
         const title = String(body?.title || "").trim();
         if (!title) return json({ error: "title required" }, 400);
@@ -384,6 +387,12 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         if (user instanceof Response) return user;
         const todoId = decodeURIComponent(todoMatch[1]!);
         const isComplete = Boolean(todoMatch[2]);
+        const writesWhileOff =
+          (isComplete && req.method === "POST") ||
+          (!isComplete && (req.method === "PATCH" || req.method === "DELETE"));
+        if (writesWhileOff && !getTodosSettings(user.id).todosEnabled) {
+          return json({ error: "todos module disabled", code: "todos_disabled" }, 403);
+        }
 
         if (isComplete && req.method === "POST") {
           const todo = completeTodo(user.id, todoId);

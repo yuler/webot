@@ -152,6 +152,129 @@ console.log("OK");
       console.error(r.stdout.toString());
     }
   });
+
+  test("disabled keeps reminder pending; slash/API writes rejected", () => {
+    const dbPath = path.join(import.meta.dir, "..", "data", "test-todos-disabled.sqlite");
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    for (const s of ["", "-wal", "-shm"]) {
+      try {
+        fs.unlinkSync(dbPath + s);
+      } catch {}
+    }
+
+    const port = 3467;
+    const script = `
+process.env.SQLITE_PATH = ${JSON.stringify(dbPath)};
+process.env.SESSION_SECRET = "todos-disabled-unit";
+process.env.WEBOT_SKIP_BOT = "1";
+process.env.PORT = String(${port});
+process.env.HOST = "127.0.0.1";
+process.env.NODE_ENV = "test";
+process.env.COOKIE_SECURE = "";
+process.env.SMTP_ADDRESS = "";
+process.env.SMTP_USERNAME = "";
+process.env.SMTP_PASSWORD = "";
+process.env.RESEND_API_KEY = "";
+
+const { ensureSchema } = await import("../src/db/index.ts");
+ensureSchema();
+const { findOrCreateUser } = await import("../src/auth/users.ts");
+const user = findOrCreateUser("todos-disabled@example.com");
+const { updateTodosSettings, getTodosSettings } = await import("../src/todos/settings.ts");
+const { createTodo, listDuePendingReminders } = await import("../src/todos/store.ts");
+const { handleTodoMessage } = await import("../src/todos/commands.ts");
+const { processDueReminders } = await import("../src/todos/reminders.ts");
+const { createSession, SESSION_COOKIE } = await import("../src/auth/session.ts");
+const { startApiServer } = await import("../src/api.ts");
+
+const past = new Date(Date.now() - 120_000).toISOString();
+const { todo, reminder } = createTodo({
+  userId: user.id,
+  title: "关掉后仍应待推",
+  remindAt: past,
+  source: "wechat",
+});
+if (!reminder) throw new Error("expected reminder");
+
+updateTodosSettings(user.id, { todosEnabled: false });
+if (getTodosSettings(user.id).todosEnabled !== false) throw new Error("should be off");
+
+const before = listDuePendingReminders(new Date().toISOString());
+if (!before.some((r) => r.id === reminder.id && r.status === "pending")) {
+  throw new Error("reminder should still be pending before tick");
+}
+
+await processDueReminders(new Date());
+const after = listDuePendingReminders(new Date().toISOString());
+const still = after.find((r) => r.id === reminder.id);
+if (!still || still.status !== "pending") {
+  throw new Error("disabled tick must keep reminder pending, got " + JSON.stringify(still));
+}
+
+const addOff = handleTodoMessage(user.id, "/todo add 不应创建");
+if (!addOff.handled || !addOff.reply.includes("关闭")) {
+  throw new Error("slash add while off should refuse: " + JSON.stringify(addOff));
+}
+const doneOff = handleTodoMessage(user.id, "/todo done 关掉后");
+if (!doneOff.handled || !doneOff.reply.includes("关闭")) {
+  throw new Error("slash done while off should refuse: " + JSON.stringify(doneOff));
+}
+const listOff = handleTodoMessage(user.id, "/todo list");
+if (!listOff.handled) throw new Error("list while off should still work");
+
+const openBefore = (await import("../src/todos/store.ts")).listTodos(user.id, { status: "open" });
+const openCount = openBefore.length;
+
+const { token } = createSession(user.id);
+const server = startApiServer();
+const cookie = SESSION_COOKIE + "=" + encodeURIComponent(token);
+const postRes = await fetch("http://127.0.0.1:" + ${port} + "/api/todos", {
+  method: "POST",
+  headers: { cookie, "content-type": "application/json" },
+  body: JSON.stringify({ title: "API不应创建" }),
+});
+if (postRes.status !== 403) {
+  throw new Error("API POST while off expected 403, got " + postRes.status + " " + (await postRes.text()));
+}
+const body = await postRes.json();
+if (body.code !== "todos_disabled") throw new Error("expected todos_disabled code");
+
+const completeRes = await fetch(
+  "http://127.0.0.1:" + ${port} + "/api/todos/" + encodeURIComponent(todo.id) + "/complete",
+  { method: "POST", headers: { cookie } },
+);
+if (completeRes.status !== 403) {
+  throw new Error("API complete while off expected 403, got " + completeRes.status);
+}
+
+const getRes = await fetch("http://127.0.0.1:" + ${port} + "/api/todos", {
+  headers: { cookie },
+});
+if (!getRes.ok) throw new Error("GET list while off should work, got " + getRes.status);
+
+const openAfter = (await import("../src/todos/store.ts")).listTodos(user.id, { status: "open" });
+if (openAfter.length !== openCount) throw new Error("no new todos should be created while off");
+
+server.stop();
+console.log("OK");
+`;
+    const scriptPath = path.join(import.meta.dir, "_todos_disabled_tmp.ts");
+    fs.writeFileSync(scriptPath, script);
+    const r = Bun.spawnSync({
+      cmd: ["bun", "run", scriptPath],
+      cwd: path.join(import.meta.dir, ".."),
+      env: { ...process.env, SQLITE_PATH: dbPath },
+    });
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch {}
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.toString()).toContain("OK");
+    if (r.exitCode !== 0) {
+      console.error(r.stderr.toString());
+      console.error(r.stdout.toString());
+    }
+  });
 });
 
 describe("ensureSchema creates todos tables", () => {
