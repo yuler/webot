@@ -4,12 +4,13 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 
 const rootRouteApi = getRouteApi("__root__");
 
-/** Left: animated WeBot mark + label; right: 登录|控制台 + ThemeSwitch. */
+/** Left: animated WeBot mark + label; right: 登录 | 待办+控制台 + ThemeSwitch. */
 export function AppBar() {
   const { me } = rootRouteApi.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const loggedIn = Boolean(me);
   const onConsole = pathname === "/console" || pathname.startsWith("/console/");
+  const onTodos = pathname === "/todos" || pathname.startsWith("/todos/");
   const onLogin = pathname === "/login" || pathname.startsWith("/login/");
   const onHome = pathname === "/";
 
@@ -36,13 +37,22 @@ export function AppBar() {
         )}
         <nav className="app-bar-end" aria-label="主导航">
           {loggedIn ? (
-            <Link
-              to="/console"
-              className={`app-bar-cta type-kicker${onConsole ? " is-active" : ""}`}
-              aria-current={onConsole ? "page" : undefined}
-            >
-              控制台
-            </Link>
+            <>
+              <Link
+                to="/todos"
+                className={`app-bar-cta type-kicker${onTodos ? " is-active" : ""}`}
+                aria-current={onTodos ? "page" : undefined}
+              >
+                待办
+              </Link>
+              <Link
+                to="/console"
+                className={`app-bar-cta type-kicker${onConsole ? " is-active" : ""}`}
+                aria-current={onConsole ? "page" : undefined}
+              >
+                控制台
+              </Link>
+            </>
           ) : (
             <Link
               to="/login"

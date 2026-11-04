@@ -56,9 +56,14 @@ function LandingPage() {
           </ul>
           <div className="actions">
             {loggedIn ? (
-              <Link to="/console" className="btn-solid">
-                进入控制台
-              </Link>
+              <>
+                <Link to="/todos" className="btn-solid">
+                  查看待办
+                </Link>
+                <Link to="/console" className="btn-ghost">
+                  控制台
+                </Link>
+              </>
             ) : (
               <Link to="/login" className="btn-solid">
                 用邮箱开始

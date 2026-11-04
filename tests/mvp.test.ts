@@ -233,8 +233,9 @@ describe("MVP API", () => {
     expect(guestHtml).toContain(">WeBot<");
     expect(guestHtml).toMatch(/src="\/assets\/intro-[A-Za-z0-9_-]+\.mp4"/);
     expect(guestHtml).toContain("WeBot 使用简介");
-    // Guest CTAs go to /login; no console entry link on the landing.
+    // Guest CTAs go to /login; no console/todos entry links on the landing.
     expect(guestHtml).not.toContain('href="/console"');
+    expect(guestHtml).not.toContain('href="/todos"');
     expect(guestHtml).not.toContain(">黑<");
     expect(guestHtml).not.toContain(">白<");
     const login = await fetch(`${BASE}/login`);
@@ -247,7 +248,7 @@ describe("MVP API", () => {
     expect([302, 303, 307, 308].includes(consoleUnauth.status) || consoleUnauth.status === 200).toBe(true);
   });
 
-  test("logged-in / still shows landing with 控制台 CTA (no redirect to /console)", async () => {
+  test("logged-in / still shows landing with 待办+控制台 CTAs (no redirect to /console)", async () => {
     const email = "landing-authed@example.com";
     await fetch(`${BASE}/api/auth/request-otp`, {
       method: "POST",
@@ -269,9 +270,14 @@ describe("MVP API", () => {
     expect([301, 302, 303, 307, 308].includes(root.status)).toBe(false);
     const html = await root.text();
     expect(html).toContain("微信里的 AI 助手");
+    expect(html).toContain(">查看待办<");
+    expect(html).toContain('href="/todos"');
     expect(html).toContain(">控制台<");
     expect(html).toContain('href="/console"');
-    // Logout lives on /console, not AppBar / landing
+    expect(html).toContain(">WeBot<");
+    expect(html).not.toContain(">weBOT<");
+    expect(html).not.toContain(">WEBOT<");
+    // Logout lives on /console|/todos, not AppBar / landing
     expect(html).not.toContain(">退出<");
     expect(html).toContain('aria-label="WeBot 首页"');
     expect(html).toContain('aria-label="切换主题"');
