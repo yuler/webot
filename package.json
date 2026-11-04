@@ -14,7 +14,8 @@
     "test": "bun test tests",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "production:sql": "bun run scripts/production-db-executor.ts"
+    "production:sql": "bun run scripts/production-db-executor.ts",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
