@@ -3,6 +3,11 @@ WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
+# .git is dockerignored — pass from CI (or leave defaults for local builds).
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=
+ENV GIT_SHA=$GIT_SHA
+ENV BUILD_TIME=$BUILD_TIME
 RUN bun run web:build
 
 FROM oven/bun:1.3

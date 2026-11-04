@@ -19,6 +19,7 @@ import {
   type Message,
   type Todo,
 } from "@/lib/api";
+import { BUILD_GIT_SHA, BUILD_TIME_ISO, formatBuildTimeShanghai } from "@/lib/build-info";
 import { formatTodoWhen, groupTodosByDate, todoGroupKey } from "@/lib/todo-groups";
 
 export const Route = createFileRoute("/console")({
@@ -165,6 +166,9 @@ function ConsolePage() {
         <div className="min-w-0">
           <h1 className="type-title">控制台</h1>
           <p className="type-meta page-head-meta mt-1">已登录：{meQ.data?.user.email}</p>
+          <p className="type-meta page-head-meta mt-0.5" title={BUILD_TIME_ISO || undefined}>
+            构建 {formatBuildTimeShanghai(BUILD_TIME_ISO) || "未知"} · {BUILD_GIT_SHA}
+          </p>
         </div>
         <button
           type="button"
