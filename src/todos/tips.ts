@@ -11,5 +11,11 @@ export const TODOS_TIPS_CONSOLE =
 export const TODOS_TIPS_SYSTEM =
   "【待办模块 Tips】主动提醒受 iLink/ClawBot 限制（启发式，非精确额度 API）：用户约 24h 内需有主动互动才能推送；窗口内约 10 条主动消息。超窗需用户先发一句。创建带提醒时务必回显绝对时间，并附上简短 Tips。";
 
+export const TODOS_TOOLS_SYSTEM =
+  "【待办写操作规则】你可以通过 tools 操作待办（list/create/complete/reschedule/delete）。" +
+  "禁止在未收到对应 tool 且 ok=true 的结果前声称已创建、已完成、已改期或已删除。" +
+  "无 /todo·@todo 标记时仅在用户有明确动词（提醒我/记一下/完成/改成/拆开/列出/删除等）时才调用写工具；暧昧时先问一句确认。" +
+  "单条删除可先确认；用户明确要求拆分/替换旧待办时可直接 delete 旧条并 create 新条。";
+
 export const PROACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const PROACTIVE_QUOTA_HEURISTIC = 10;

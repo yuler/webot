@@ -259,12 +259,31 @@ export async function tryTodoNaturalLanguage(
   return heuristicCreate(userId, trimmed);
 }
 
+/** Normalize `/todo` and `@todo` intent markers before slash / NL routing. */
+export function normalizeTodoIntentMarker(text: string): string {
+  const trimmed = text.trim();
+  const m = trimmed.match(/^[@/]todo\b([:\s]|$)/i);
+  if (!m) return trimmed;
+  const rest = trimmed.slice(m[0].length).trim();
+  if (!rest) return "/todo";
+  if (
+    /^(add|list|ls|done|complete|on|off|help|\?|帮助|开启|关闭|创建|完成|列表)\b/i.test(
+      rest,
+    )
+  ) {
+    return `/todo ${rest}`;
+  }
+  // Natural language after marker — do not force slash shorthand create.
+  return rest;
+}
+
 export async function handleTodoMessage(
   userId: string,
   text: string,
   options?: TodoCommandOptions,
 ): Promise<TodoCommandResult> {
-  const slash = tryTodoSlashCommand(userId, text);
+  const normalized = normalizeTodoIntentMarker(text);
+  const slash = tryTodoSlashCommand(userId, normalized);
   if (slash.handled) return slash;
-  return tryTodoNaturalLanguage(userId, text, options);
+  return tryTodoNaturalLanguage(userId, normalized, options);
 }
