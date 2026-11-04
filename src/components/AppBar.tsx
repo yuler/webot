@@ -4,7 +4,7 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 
 const rootRouteApi = getRouteApi("__root__");
 
-/** Left: animated weBOT mark + label; right: 登录 | 待办+控制台 + ThemeSwitch. */
+/** Left: animated WeBot mark + label; right: 登录 | 待办+控制台 + ThemeSwitch. */
 export function AppBar() {
   const { me } = rootRouteApi.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -19,7 +19,7 @@ export function AppBar() {
       <span className="app-bar-logo-frame">
         <LogoMark className="app-bar-logo-mark" />
       </span>
-      <span className="type-kicker text-ink app-bar-brand">weBOT</span>
+      <span className="type-kicker text-ink app-bar-brand">WeBot</span>
     </>
   );
 
@@ -27,7 +27,7 @@ export function AppBar() {
     <header className="app-bar">
       <nav className="app-bar-nav" aria-label="主导航">
         {onHome ? (
-          <span className="app-bar-home" aria-label="weBOT 首页">
+          <span className="app-bar-home" aria-label="WeBot 首页">
             {brand}
           </span>
         ) : (
