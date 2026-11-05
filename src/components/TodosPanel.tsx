@@ -2,20 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   completeTodoApi,
-  createTodoApi,
   deleteTodoApi,
   fetchTodos,
   fetchTodosSettings,
   patchTodosSettings,
+  updateTodoApi,
   type Todo,
 } from "@/lib/api";
 import { formatTodoWhen, groupTodosByDate, todoGroupKey } from "@/lib/todo-groups";
 
-/** Shared open-todos panel: settings toggle, create form, date buckets. Writes respect todosEnabled. */
+/** Shared open-todos panel: settings toggle, AI native prompt, date buckets, inline editable title. */
 export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string }) {
   const qc = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [remindLocal, setRemindLocal] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   const settingsQ = useQuery({
     queryKey: ["todos-settings"],
@@ -31,17 +31,10 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
     mutationFn: (todosEnabled: boolean) => patchTodosSettings({ todosEnabled }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["todos-settings"] }),
   });
-  const createM = useMutation({
-    mutationFn: () =>
-      createTodoApi({
-        title: title.trim(),
-        remindAt: remindLocal ? new Date(remindLocal).toISOString() : null,
-      }),
-    onSuccess: () => {
-      setTitle("");
-      setRemindLocal("");
-      qc.invalidateQueries({ queryKey: ["todos"] });
-    },
+  const updateM = useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) =>
+      updateTodoApi(id, { title }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["todos"] }),
   });
   const completeM = useMutation({
     mutationFn: (id: string) => completeTodoApi(id),
@@ -57,17 +50,23 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
   const todos = todosQ.data?.todos ?? [];
   const timeZone = settingsQ.data?.settings.timezone || "Asia/Shanghai";
   const buckets = groupTodosByDate(todos, { timeZone });
-  const titleFieldId = `${headingId}-title`;
-  const remindFieldId = `${headingId}-remind`;
+
+  function commitEdit(todoId: string, originalTitle: string) {
+    const trimmed = editingTitle.trim();
+    if (trimmed && trimmed !== originalTitle) {
+      updateM.mutate({ id: todoId, title: trimmed });
+    }
+    setEditingId(null);
+  }
 
   return (
     <section className="panel" aria-labelledby={headingId}>
       <div className="panel-head">
         <div className="min-w-0">
           <h2 id={headingId} className="type-app-title">
-            待办
+            Todos
           </h2>
-          <p className="type-meta mt-1">按日期分组 · 极简单次提醒 · 与微信 ClawBot 对话也可创建</p>
+          <p className="type-meta mt-1">按日期分组 · 极简单次提醒 · 通过微信与 AI 对话自动创建</p>
         </div>
         <button
           type="button"
@@ -80,6 +79,13 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
         </button>
       </div>
 
+      <div className="notice mt-3" role="note">
+        <span className="notice-tag">AI Native</span>
+        <span>
+          Todos 由 AI 自动解析管理：在微信中与 ClawBot 对话（如「明天 9 点提醒我交社保」）即可自动创建；点击待办标题可直接行内修改。
+        </span>
+      </div>
+
       {tips ? (
         <p className="notice mt-3" role="note">
           <span className="notice-tag">Tips</span>
@@ -87,59 +93,19 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
         </p>
       ) : null}
 
-      <form
-        className="mt-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!title.trim() || !enabled) return;
-          createM.mutate();
-        }}
-      >
-        <label className="type-meta" htmlFor={titleFieldId}>
-          新待办
-        </label>
-        <input
-          id={titleFieldId}
-          className="field mt-1"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="例如：交社保"
-          disabled={!enabled || createM.isPending}
-        />
-        <label className="type-meta mt-3 block" htmlFor={remindFieldId}>
-          提醒时间（可选，本地时区）
-        </label>
-        <input
-          id={remindFieldId}
-          className="field mt-1"
-          type="datetime-local"
-          value={remindLocal}
-          onChange={(e) => setRemindLocal(e.target.value)}
-          disabled={!enabled || createM.isPending}
-        />
-        <div className="actions mt-3">
-          <button
-            type="submit"
-            className={`btn-solid${createM.isPending ? " is-loading" : ""}`}
-            disabled={!enabled || !title.trim() || createM.isPending}
-          >
-            添加
-          </button>
-        </div>
-        {createM.isError ? (
-          <p className="notice notice--error mt-3" role="alert">
-            <span className="notice-tag">出错</span>
-            <span>创建失败</span>
-          </p>
-        ) : null}
-      </form>
+      {updateM.isError ? (
+        <p className="notice notice--error mt-3" role="alert">
+          <span className="notice-tag">出错</span>
+          <span>修改标题失败，请稍后重试</span>
+        </p>
+      ) : null}
 
       {todosQ.isPending ? (
         <p className="type-meta mt-4">加载中…</p>
       ) : todos.length === 0 ? (
         <div className="timeline-empty mt-4">
-          <p className="type-meta">暂无待办</p>
-          <p className="type-meta mt-1">在微信说「明天 9 点提醒我…」或在上方添加</p>
+          <p className="type-meta">暂无 Todos</p>
+          <p className="type-meta mt-1">在微信对 ClawBot 说「明天 9 点提醒我…」，AI 会自动创建并准时提醒</p>
         </div>
       ) : (
         <div className="todo-groups mt-4">
@@ -155,6 +121,8 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
                   const groupedOnDue = Boolean(t.dueAt);
                   const showRemindHint =
                     groupedOnDue && t.remindAt && t.remindAt !== t.dueAt;
+                  const isEditing = editingId === t.id;
+
                   return (
                     <li key={t.id} className="todo-row">
                       <button
@@ -165,7 +133,37 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
                         onClick={() => completeM.mutate(t.id)}
                       />
                       <div className="todo-main">
-                        <p className="todo-title">{t.title}</p>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            className="todo-title-input"
+                            value={editingTitle}
+                            autoFocus
+                            disabled={updateM.isPending}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                commitEdit(t.id, t.title);
+                              } else if (e.key === "Escape") {
+                                setEditingId(null);
+                              }
+                            }}
+                            onBlur={() => commitEdit(t.id, t.title)}
+                          />
+                        ) : (
+                          <p
+                            className="todo-title todo-title-editable"
+                            title="点击直接修改标题"
+                            onClick={() => {
+                              if (!enabled || updateM.isPending) return;
+                              setEditingId(t.id);
+                              setEditingTitle(t.title);
+                            }}
+                          >
+                            {t.title}
+                          </p>
+                        )}
                         <div className="todo-meta type-meta">
                           {key ? (
                             <time dateTime={key}>{formatTodoWhen(key, timeZone)}</time>
@@ -184,7 +182,7 @@ export function TodosPanel({ headingId = "todos-heading" }: { headingId?: string
                         className="btn-ghost todo-delete"
                         disabled={deleteM.isPending}
                         onClick={() => {
-                          if (!window.confirm(`删除待办「${t.title}」？`)) return;
+                          if (!window.confirm(`删除 Todo「${t.title}」？`)) return;
                           deleteM.mutate(t.id);
                         }}
                       >

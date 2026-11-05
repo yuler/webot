@@ -11,7 +11,7 @@
     "web:build": "vite build",
     "video:render": "cd intro-video && npx remotion render src/index.ts Intro ../src/assets/intro.mp4 --codec h264 --crf 22 --audio-bitrate 128k --browser-executable=/usr/bin/chromium --gl=angle",
     "video:poster": "cd intro-video && npx remotion still src/index.ts Intro ../src/assets/intro-poster.jpg --frame 800 --jpeg-quality 92 --browser-executable=/usr/bin/chromium --gl=angle",
-    "test": "bun test tests",
+    "test": "bun test ./tests/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "production:sql": "bun run scripts/production-db-executor.ts",

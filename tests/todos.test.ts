@@ -85,7 +85,7 @@ ensureSchema();
 const { findOrCreateUser } = await import("../src/auth/users.ts");
 const user = findOrCreateUser("todos-unit@example.com");
 const { getTodosSettings, recordUserInbound, canSendProactive, bumpProactiveSent, updateTodosSettings } = await import("../src/todos/settings.ts");
-const { createTodo, listTodos, listCatchupCandidates, markReminder, completeTodo } = await import("../src/todos/store.ts");
+const { createTodo, listTodos, listCatchupCandidates, markReminder, completeTodo, updateTodo } = await import("../src/todos/store.ts");
 const { handleTodoMessage } = await import("../src/todos/commands.ts");
 const { PROACTIVE_QUOTA_HEURISTIC } = await import("../src/todos/tips.ts");
 
@@ -123,7 +123,11 @@ if (!nl.reply.includes("买牛奶")) throw new Error("reply should confirm title
 if (!nl.reply.includes("10")) throw new Error("reply should confirm absolute time");
 if (!nl.reply.includes("24")) throw new Error("reply should include tips");
 
-const done = await handleTodoMessage(user.id, "/todo done 交社保");
+// Inline update todo title
+const updated = updateTodo(user.id, todo.id, { title: "交医保和社保" });
+if (!updated || updated.title !== "交医保和社保") throw new Error("updateTodo title failed");
+
+const done = await handleTodoMessage(user.id, "/todo done 交医保和社保");
 if (!done.handled || !done.reply.includes("完成")) throw new Error("done failed");
 if (completeTodo(user.id, todo.id)?.status !== "done" && listTodos(user.id, { status: "open" }).some(t => t.id === todo.id)) {
   throw new Error("todo should be done");
@@ -145,12 +149,12 @@ console.log("OK");
     try {
       fs.unlinkSync(scriptPath);
     } catch {}
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout.toString()).toContain("OK");
     if (r.exitCode !== 0) {
       console.error(r.stderr.toString());
       console.error(r.stdout.toString());
     }
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.toString()).toContain("OK");
   });
 
   test("disabled keeps reminder pending; slash/API writes rejected", () => {
@@ -268,12 +272,12 @@ console.log("OK");
     try {
       fs.unlinkSync(scriptPath);
     } catch {}
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout.toString()).toContain("OK");
     if (r.exitCode !== 0) {
       console.error(r.stderr.toString());
       console.error(r.stdout.toString());
     }
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.toString()).toContain("OK");
   });
 });
 

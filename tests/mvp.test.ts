@@ -221,8 +221,8 @@ describe("MVP API", () => {
     expect(root.status).not.toBe(500);
     const guestHtml = await root.text();
     expect(guestHtml).toContain("微信里的 AI 助手");
-    expect(guestHtml).toContain(">登录<");
-    expect(guestHtml).toContain('>登录</a>');
+    expect(guestHtml).toContain(">控制台<");
+    expect(guestHtml).toContain('href="/console"');
     expect(guestHtml).toContain('aria-label="WeBot 首页"');
     expect(guestHtml).toContain('aria-label="切换主题"');
     expect(guestHtml).not.toContain(">退出<");
@@ -233,8 +233,7 @@ describe("MVP API", () => {
     expect(guestHtml).toContain(">WeBot<");
     expect(guestHtml).toMatch(/src="\/assets\/intro-[A-Za-z0-9_-]+\.mp4"/);
     expect(guestHtml).toContain("WeBot 使用简介");
-    // Guest CTAs go to /login; no console/todos entry links on the landing.
-    expect(guestHtml).not.toContain('href="/console"');
+    // Guest CTAs go to /login; no todos entry links on the landing.
     expect(guestHtml).not.toContain('href="/todos"');
     expect(guestHtml).not.toContain(">黑<");
     expect(guestHtml).not.toContain(">白<");
@@ -270,14 +269,13 @@ describe("MVP API", () => {
     expect([301, 302, 303, 307, 308].includes(root.status)).toBe(false);
     const html = await root.text();
     expect(html).toContain("微信里的 AI 助手");
-    expect(html).toContain(">查看待办<");
-    expect(html).toContain('href="/todos"');
+    expect(html).not.toContain(">查看待办<");
     expect(html).toContain(">控制台<");
     expect(html).toContain('href="/console"');
     expect(html).toContain(">WeBot<");
     expect(html).not.toContain(">weBOT<");
     expect(html).not.toContain(">WEBOT<");
-    // Logout lives on /console|/todos, not AppBar / landing
+    // Logout lives on /console, not AppBar / landing
     expect(html).not.toContain(">退出<");
     expect(html).toContain('aria-label="WeBot 首页"');
     expect(html).toContain('aria-label="切换主题"');
@@ -293,10 +291,35 @@ describe("MVP API", () => {
     expect(consoleHtml).toContain(">退出<");
     expect(consoleHtml).toContain("复制绑定命令");
     expect(consoleHtml).toContain("扫码上线");
-    expect(consoleHtml).toContain("清空聊天记录");
+    expect(consoleHtml).toContain("微信绑定");
+    expect(consoleHtml).toContain("历史消息");
+    expect(consoleHtml).toContain("Todos");
+    expect(consoleHtml).toContain("is-disabled");
     expect(consoleHtml).not.toContain('href="/clawbot"');
     expect(consoleHtml).toContain('aria-current="page"');
     expect(consoleHtml).toContain('aria-label="切换主题"');
+
+    // /todos redirects to /console/todos
+    const todosRedirect = await fetch(`${BASE}/todos`, {
+      redirect: "manual",
+      headers: { cookie },
+    });
+    expect([301, 302, 307, 308].includes(todosRedirect.status)).toBe(true);
+    expect(todosRedirect.headers.get("location")).toBe("/console/todos");
+
+    // /console/messages has message clear button and link to deleted messages
+    const messagesPage = await fetch(`${BASE}/console/messages`, { headers: { cookie } });
+    expect(messagesPage.status).toBe(200);
+    const messagesHtml = await messagesPage.text();
+    expect(messagesHtml).toContain("清空聊天记录");
+    expect(messagesHtml).toContain("查看已删除消息");
+
+    // /console/todos renders Todos panel with AI native prompt
+    const todosPage = await fetch(`${BASE}/console/todos`, { headers: { cookie } });
+    expect(todosPage.status).toBe(200);
+    const todosHtml = await todosPage.text();
+    expect(todosHtml).toContain("AI Native");
+    expect(todosHtml).toContain("Todos 由 AI 自动解析管理");
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {
@@ -440,6 +463,23 @@ console.log("OK");
     const after = await fetch(`${BASE}/api/messages`, { headers: { cookie } });
     const afterBody = (await after.json()) as { messages: unknown[] };
     expect(afterBody.messages.length).toBe(0);
+
+    // Soft-deleted messages accessible via ?deleted=true with pagination
+    const deletedRes = await fetch(`${BASE}/api/messages?deleted=true&page=1&limit=10`, {
+      headers: { cookie },
+    });
+    expect(deletedRes.status).toBe(200);
+    const deletedBody = (await deletedRes.json()) as {
+      messages: unknown[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+    expect(deletedBody.total).toBe(clearBody.deleted);
+    expect(deletedBody.messages.length).toBe(clearBody.deleted);
+    expect(deletedBody.page).toBe(1);
+    expect(deletedBody.totalPages).toBe(1);
 
     // Rows remain with deleted_at (soft delete, not hard delete)
     const sqlite = new Database(TMP);
