@@ -1,17 +1,11 @@
-import { Link, getRouteApi, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { LogoMark } from "@/components/LogoMark";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 
-const rootRouteApi = getRouteApi("__root__");
-
-/** Left: animated WeBot mark + label; right: 登录 | 待办+控制台 + ThemeSwitch. */
+/** Left: animated WeBot mark + label; right: 控制台 (highlighted & disabled inside /console/*) + ThemeSwitch. */
 export function AppBar() {
-  const { me } = rootRouteApi.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const loggedIn = Boolean(me);
   const onConsole = pathname === "/console" || pathname.startsWith("/console/");
-  const onTodos = pathname === "/todos" || pathname.startsWith("/todos/");
-  const onLogin = pathname === "/login" || pathname.startsWith("/login/");
   const onHome = pathname === "/";
 
   const brand = (
@@ -36,30 +30,20 @@ export function AppBar() {
           </Link>
         )}
         <nav className="app-bar-end" aria-label="主导航">
-          {loggedIn ? (
-            <>
-              <Link
-                to="/todos"
-                className={`app-bar-cta type-kicker${onTodos ? " is-active" : ""}`}
-                aria-current={onTodos ? "page" : undefined}
-              >
-                待办
-              </Link>
-              <Link
-                to="/console"
-                className={`app-bar-cta type-kicker${onConsole ? " is-active" : ""}`}
-                aria-current={onConsole ? "page" : undefined}
-              >
-                控制台
-              </Link>
-            </>
+          {onConsole ? (
+            <span
+              className="app-bar-cta type-kicker is-active is-disabled"
+              aria-current="page"
+              aria-disabled="true"
+            >
+              控制台
+            </span>
           ) : (
             <Link
-              to="/login"
-              className={`app-bar-cta type-kicker${onLogin ? " is-active" : ""}`}
-              aria-current={onLogin ? "page" : undefined}
+              to="/console"
+              className="app-bar-cta type-kicker"
             >
-              登录
+              控制台
             </Link>
           )}
           <ThemeSwitch />

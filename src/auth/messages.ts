@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { newId, nowIso } from "./crypto";
 
@@ -34,6 +34,43 @@ export function listMessagesForUser(userId: string, limit = 100): MessageRow[] {
     .orderBy(desc(schema.messages.createdAt))
     .limit(limit)
     .all();
+}
+
+/**
+ * Paginated soft-deleted messages for current user.
+ */
+export function listDeletedMessagesForUser(
+  userId: string,
+  opts: { page?: number; limit?: number } = {},
+): {
+  messages: MessageRow[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+} {
+  const page = Math.max(1, opts.page ?? 1);
+  const limit = Math.min(Math.max(1, opts.limit ?? 20), 100);
+  const offset = (page - 1) * limit;
+
+  const totalRow = db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.messages)
+    .where(and(eq(schema.messages.userId, userId), isNotNull(schema.messages.deletedAt)))
+    .get();
+  const total = Number(totalRow?.count ?? 0);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const messages = db
+    .select()
+    .from(schema.messages)
+    .where(and(eq(schema.messages.userId, userId), isNotNull(schema.messages.deletedAt)))
+    .orderBy(desc(schema.messages.deletedAt), desc(schema.messages.createdAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  return { messages, total, page, limit, totalPages };
 }
 
 /**

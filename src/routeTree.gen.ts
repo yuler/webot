@@ -13,6 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TodosRouteImport } from './routes/todos'
+import { Route as ConsoleIndexRouteImport } from './routes/console/index'
+import { Route as ConsoleMessagesRouteImport } from './routes/console/messages'
+import { Route as ConsoleTodosRouteImport } from './routes/console/todos'
+import { Route as ConsoleMessagesDeletedRouteImport } from './routes/console/messages_.deleted'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,37 +38,92 @@ const TodosRoute = TodosRouteImport.update({
   path: '/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleIndexRoute = ConsoleIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const ConsoleMessagesRoute = ConsoleMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const ConsoleTodosRoute = ConsoleTodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const ConsoleMessagesDeletedRoute = ConsoleMessagesDeletedRouteImport.update({
+  id: '/messages_/deleted',
+  path: '/messages/deleted',
+  getParentRoute: () => ConsoleRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/console': typeof ConsoleRoute
+  '/console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/messages': typeof ConsoleMessagesRoute
+  '/console/todos': typeof ConsoleTodosRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/console/messages/deleted': typeof ConsoleMessagesDeletedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/console': typeof ConsoleRoute
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/messages': typeof ConsoleMessagesRoute
+  '/console/todos': typeof ConsoleTodosRoute
+  '/console': typeof ConsoleIndexRoute
+  '/console/messages/deleted': typeof ConsoleMessagesDeletedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/console': typeof ConsoleRoute
+  '/console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/messages': typeof ConsoleMessagesRoute
+  '/console/todos': typeof ConsoleTodosRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/console/messages_/deleted': typeof ConsoleMessagesDeletedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/console' | '/login' | '/todos'
+  fullPaths:
+    | '/'
+    | '/console'
+    | '/login'
+    | '/todos'
+    | '/console/messages'
+    | '/console/todos'
+    | '/console/'
+    | '/console/messages/deleted'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/console' | '/login' | '/todos'
-  id: '__root__' | '/' | '/console' | '/login' | '/todos'
+  to:
+    | '/'
+    | '/login'
+    | '/todos'
+    | '/console/messages'
+    | '/console/todos'
+    | '/console'
+    | '/console/messages/deleted'
+  id:
+    | '__root__'
+    | '/'
+    | '/console'
+    | '/login'
+    | '/todos'
+    | '/console/messages'
+    | '/console/todos'
+    | '/console/'
+    | '/console/messages_/deleted'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConsoleRoute: typeof ConsoleRoute
+  ConsoleRoute: typeof ConsoleRouteWithChildren
   LoginRoute: typeof LoginRoute
   TodosRoute: typeof TodosRoute
 }
@@ -99,12 +158,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console/': {
+      id: '/console/'
+      path: '/'
+      fullPath: '/console/'
+      preLoaderRoute: typeof ConsoleIndexRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/console/messages': {
+      id: '/console/messages'
+      path: '/messages'
+      fullPath: '/console/messages'
+      preLoaderRoute: typeof ConsoleMessagesRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/console/todos': {
+      id: '/console/todos'
+      path: '/todos'
+      fullPath: '/console/todos'
+      preLoaderRoute: typeof ConsoleTodosRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/console/messages_/deleted': {
+      id: '/console/messages_/deleted'
+      path: '/messages/deleted'
+      fullPath: '/console/messages/deleted'
+      preLoaderRoute: typeof ConsoleMessagesDeletedRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
   }
 }
 
+interface ConsoleRouteChildren {
+  ConsoleMessagesRoute: typeof ConsoleMessagesRoute
+  ConsoleTodosRoute: typeof ConsoleTodosRoute
+  ConsoleIndexRoute: typeof ConsoleIndexRoute
+  ConsoleMessagesDeletedRoute: typeof ConsoleMessagesDeletedRoute
+}
+
+const ConsoleRouteChildren: ConsoleRouteChildren = {
+  ConsoleMessagesRoute: ConsoleMessagesRoute,
+  ConsoleTodosRoute: ConsoleTodosRoute,
+  ConsoleIndexRoute: ConsoleIndexRoute,
+  ConsoleMessagesDeletedRoute: ConsoleMessagesDeletedRoute,
+}
+
+const ConsoleRouteWithChildren =
+  ConsoleRoute._addFileChildren(ConsoleRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConsoleRoute: ConsoleRoute,
+  ConsoleRoute: ConsoleRouteWithChildren,
   LoginRoute: LoginRoute,
   TodosRoute: TodosRoute,
 }

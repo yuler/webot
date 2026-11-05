@@ -30,7 +30,11 @@ import {
   getBindingForUser,
   resetBindCode,
 } from "./auth/bindings";
-import { listMessagesForUser, softDeleteMessagesForUser } from "./auth/messages";
+import {
+  listDeletedMessagesForUser,
+  listMessagesForUser,
+  softDeleteMessagesForUser,
+} from "./auth/messages";
 import { resetChatMemory } from "./chat-memory";
 import {
   completeTodo,
@@ -313,9 +317,18 @@ export function startApiServer(): ReturnType<typeof Bun.serve> {
         return json({ binding: disconnectBinding(user.id) });
       }
 
-      if (pathname === "/api/messages" && req.method === "GET") {
+      if (
+        (pathname === "/api/messages" || pathname === "/api/messages/deleted") &&
+        req.method === "GET"
+      ) {
         const user = requireUser(req);
         if (user instanceof Response) return user;
+        const isDeleted = pathname === "/api/messages/deleted" || url.searchParams.get("deleted") === "true";
+        if (isDeleted) {
+          const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+          const limit = Math.min(Math.max(1, Number(url.searchParams.get("limit") || 20)), 100);
+          return json(listDeletedMessagesForUser(user.id, { page, limit }));
+        }
         const limit = Math.min(Number(url.searchParams.get("limit") || 100), 500);
         return json({ messages: listMessagesForUser(user.id, limit) });
       }

@@ -113,6 +113,23 @@ export async function fetchMessages(limit = 100) {
   );
 }
 
+export type DeletedMessagesResponse = {
+  messages: Message[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export async function fetchDeletedMessages(page = 1, limit = 20): Promise<DeletedMessagesResponse> {
+  return parseJson<DeletedMessagesResponse>(
+    await apiFetch(`/api/messages?deleted=true&page=${page}&limit=${limit}`, {
+      credentials: "include",
+      cache: "no-store",
+    }),
+  );
+}
+
 /** Soft-delete current user's visible messages (rows kept with deletedAt). */
 export async function clearMessages() {
   return parseJson<{ ok: true; deleted: number }>(
@@ -194,6 +211,26 @@ export async function completeTodoApi(id: string) {
   return parseJson<{ todo: Todo }>(
     await apiFetch(`/api/todos/${encodeURIComponent(id)}/complete`, {
       method: "POST",
+      credentials: "include",
+    }),
+  );
+}
+
+export async function updateTodoApi(
+  id: string,
+  patch: {
+    title?: string;
+    notes?: string | null;
+    dueAt?: string | null;
+    remindAt?: string | null;
+    status?: "open" | "done" | "cancelled";
+  },
+) {
+  return parseJson<{ todo: Todo }>(
+    await apiFetch(`/api/todos/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
       credentials: "include",
     }),
   );

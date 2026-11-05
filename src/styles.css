@@ -530,6 +530,11 @@
   box-shadow: inset 0 -1px 0 var(--color-ink);
 }
 
+.app-bar-cta.is-disabled {
+  pointer-events: none;
+  cursor: default;
+}
+
 .theme-switch {
   display: inline-flex;
   flex-shrink: 0;
@@ -650,48 +655,68 @@
   min-width: 0;
   padding-inline: 8px;
   white-space: nowrap;
+  text-align: center;
 }
 
 .segmented .btn-ghost + .btn-ghost {
   border-left: none;
 }
 
-/* ---------- Console layout ---------- */
-
-.console-grid {
-  display: block;
-}
-
-/* Phones: only the selected tab pane is shown. */
-.console-grid[data-tab="setup"] .console-pane--messages,
-.console-grid[data-tab="setup"] .console-pane--todos,
-.console-grid[data-tab="messages"] .console-pane--setup,
-.console-grid[data-tab="messages"] .console-pane--todos,
-.console-grid[data-tab="todos"] .console-pane--setup,
-.console-grid[data-tab="todos"] .console-pane--messages {
-  display: none;
+.segmented .btn-ghost.is-active,
+.segmented .btn-ghost[aria-current="page"] {
+  background: var(--color-ink);
+  color: var(--color-ground);
+  border-color: var(--color-ink);
 }
 
 @media (min-width: 1024px) {
   .segmented {
-    display: none;
+    display: inline-flex;
+    grid-template-columns: none;
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 0;
+    border-bottom: none;
+    position: static;
   }
 
-  .console-grid {
+  .segmented .btn-ghost + .btn-ghost {
+    border-left: 1px solid var(--color-line);
+  }
+}
+
+/* ---------- Console layout ---------- */
+
+.console-setup-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 1024px) {
+  .console-setup-grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: 24px;
     align-items: start;
   }
+}
 
-  .console-grid[data-tab] .console-pane {
-    display: block;
-  }
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+}
 
-  /* 待办 spans full width under setup + messages on desktop. */
-  .console-pane--todos {
-    grid-column: 1 / -1;
-  }
+.pagination-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ---------- Status chips ---------- */
@@ -1230,6 +1255,31 @@
   margin: 0;
   color: var(--color-ink);
   overflow-wrap: anywhere;
+}
+
+.todo-title-editable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  margin: -1px -4px;
+  transition: background-color 120ms ease;
+}
+
+@media (hover: hover) {
+  .todo-title-editable:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.todo-title-input {
+  width: 100%;
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-ground);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  outline: none;
 }
 
 .todo-meta {
