@@ -117,7 +117,7 @@ function ConsoleMessagesPage() {
         <div className="timeline-empty mt-4">
           <p className="type-meta">暂无活动消息</p>
           {!isBound ? (
-            <Link to="/console" className="btn-ghost mt-3">
+            <Link to="/console/bind" className="btn-ghost mt-3">
               去扫码与绑定
             </Link>
           ) : (

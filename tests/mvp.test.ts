@@ -285,6 +285,21 @@ describe("MVP API", () => {
     expect(html).not.toContain(">黑<");
     expect(html).not.toContain(">白<");
 
+    // /console redirects to /console/bind by default
+    const consoleRedirect = await fetch(`${BASE}/console`, {
+      redirect: "manual",
+      headers: { cookie },
+    });
+    expect([301, 302, 307, 308].includes(consoleRedirect.status)).toBe(true);
+    expect(consoleRedirect.headers.get("location")).toBe("/console/bind");
+
+    // /console/bind renders scan and bind page directly
+    const bindPage = await fetch(`${BASE}/console/bind`, { headers: { cookie } });
+    expect(bindPage.status).toBe(200);
+    const bindHtml = await bindPage.text();
+    expect(bindHtml).toContain("扫码上线");
+    expect(bindHtml).toContain("复制绑定命令");
+
     const consolePage = await fetch(`${BASE}/console`, { headers: { cookie } });
     expect(consolePage.status).toBe(200);
     const consoleHtml = await consolePage.text();
@@ -320,6 +335,10 @@ describe("MVP API", () => {
     const todosHtml = await todosPage.text();
     expect(todosHtml).toContain("AI Native");
     expect(todosHtml).toContain("Todos 由 AI 自动解析管理");
+    // Verify only the Todos tab is highlighted on /console/todos
+    expect(todosHtml).toContain('class="tab-item is-active active" href="/console/todos"');
+    expect(todosHtml).toContain('class="tab-item" href="/console/bind"');
+    expect(todosHtml).toContain('class="tab-item" href="/console/messages"');
   });
 
   test("invalid email on request-otp returns 400 (not 429)", async () => {

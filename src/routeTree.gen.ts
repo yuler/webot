@@ -14,6 +14,7 @@ import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TodosRouteImport } from './routes/todos'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
+import { Route as ConsoleBindRouteImport } from './routes/console/bind'
 import { Route as ConsoleMessagesRouteImport } from './routes/console/messages'
 import { Route as ConsoleTodosRouteImport } from './routes/console/todos'
 import { Route as ConsoleMessagesDeletedRouteImport } from './routes/console/messages_.deleted'
@@ -43,6 +44,11 @@ const ConsoleIndexRoute = ConsoleIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ConsoleRoute,
 } as any)
+const ConsoleBindRoute = ConsoleBindRouteImport.update({
+  id: '/bind',
+  path: '/bind',
+  getParentRoute: () => ConsoleRoute,
+} as any)
 const ConsoleMessagesRoute = ConsoleMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/bind': typeof ConsoleBindRoute
   '/console/messages': typeof ConsoleMessagesRoute
   '/console/todos': typeof ConsoleTodosRoute
   '/console/': typeof ConsoleIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/bind': typeof ConsoleBindRoute
   '/console/messages': typeof ConsoleMessagesRoute
   '/console/todos': typeof ConsoleTodosRoute
   '/console': typeof ConsoleIndexRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/console/bind': typeof ConsoleBindRoute
   '/console/messages': typeof ConsoleMessagesRoute
   '/console/todos': typeof ConsoleTodosRoute
   '/console/': typeof ConsoleIndexRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/login'
     | '/todos'
+    | '/console/bind'
     | '/console/messages'
     | '/console/todos'
     | '/console/'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/todos'
+    | '/console/bind'
     | '/console/messages'
     | '/console/todos'
     | '/console'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/login'
     | '/todos'
+    | '/console/bind'
     | '/console/messages'
     | '/console/todos'
     | '/console/'
@@ -165,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleIndexRouteImport
       parentRoute: typeof ConsoleRoute
     }
+    '/console/bind': {
+      id: '/console/bind'
+      path: '/bind'
+      fullPath: '/console/bind'
+      preLoaderRoute: typeof ConsoleBindRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
     '/console/messages': {
       id: '/console/messages'
       path: '/messages'
@@ -190,6 +209,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface ConsoleRouteChildren {
+  ConsoleBindRoute: typeof ConsoleBindRoute
   ConsoleMessagesRoute: typeof ConsoleMessagesRoute
   ConsoleTodosRoute: typeof ConsoleTodosRoute
   ConsoleIndexRoute: typeof ConsoleIndexRoute
@@ -197,6 +217,7 @@ interface ConsoleRouteChildren {
 }
 
 const ConsoleRouteChildren: ConsoleRouteChildren = {
+  ConsoleBindRoute: ConsoleBindRoute,
   ConsoleMessagesRoute: ConsoleMessagesRoute,
   ConsoleTodosRoute: ConsoleTodosRoute,
   ConsoleIndexRoute: ConsoleIndexRoute,

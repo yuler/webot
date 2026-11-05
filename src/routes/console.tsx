@@ -1,14 +1,13 @@
 import {
-  Link,
   Outlet,
   createFileRoute,
   redirect,
   useNavigate,
-  useRouterState,
 } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { useBotStatus } from "@/components/ClawQr";
+import { Tabs } from "@/components/Tabs";
 import { fetchMe, fetchMessages, logout } from "@/lib/api";
 import { BUILD_GIT_SHA, BUILD_TIME_ISO, formatBuildTimeShanghai } from "@/lib/build-info";
 
@@ -25,7 +24,6 @@ function ConsoleLayout() {
   const { me: initial } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const meQ = useQuery({
     queryKey: ["me"],
@@ -57,9 +55,24 @@ function ConsoleLayout() {
   const botReady = Boolean(botQ.data?.botReady);
   const messagesCount = msgQ.data?.messages?.length ?? 0;
 
-  const isSetup = pathname === "/console" || pathname === "/console/";
-  const isMessages = pathname.startsWith("/console/messages");
-  const isTodos = pathname.startsWith("/console/todos");
+  const tabs = [
+    {
+      id: "bind",
+      label: "微信绑定",
+      to: "/console/bind",
+    },
+    {
+      id: "messages",
+      label: "历史消息",
+      to: "/console/messages",
+      badge: messagesCount > 0 ? messagesCount : null,
+    },
+    {
+      id: "todos",
+      label: "Todos",
+      to: "/console/todos",
+    },
+  ];
 
   return (
     <AppShell size="lg">
@@ -90,31 +103,9 @@ function ConsoleLayout() {
         </span>
       </div>
 
-      <nav className="segmented" role="navigation" aria-label="控制台功能切换">
-        <Link
-          to="/console"
-          className={`btn-ghost${isSetup ? " is-active" : ""}`}
-          aria-current={isSetup ? "page" : undefined}
-        >
-          微信绑定
-        </Link>
-        <Link
-          to="/console/messages"
-          className={`btn-ghost${isMessages ? " is-active" : ""}`}
-          aria-current={isMessages ? "page" : undefined}
-        >
-          历史消息{messagesCount > 0 ? <span className="tabular">（{messagesCount}）</span> : null}
-        </Link>
-        <Link
-          to="/console/todos"
-          className={`btn-ghost${isTodos ? " is-active" : ""}`}
-          aria-current={isTodos ? "page" : undefined}
-        >
-          Todos
-        </Link>
-      </nav>
+      <Tabs items={tabs} ariaLabel="控制台功能切换" />
 
-      <div className="console-content mt-6">
+      <div className="console-content mt-4 md:mt-6">
         <Outlet />
       </div>
     </AppShell>
